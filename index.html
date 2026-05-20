@@ -121,7 +121,7 @@
                 <div class="lg:col-span-7">
                     <div class="flex items-baseline justify-between mb-8">
                         <h2 class="text-2xl font-bold font-serif text-gray-900 italic">Sammlung</h2>
-                        <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">Laden...</span>
+                        <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">Bereit</span>
                     </div>
                     
                     <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -141,17 +141,31 @@
     </div>
 
     <script>
-        window.onerror = function(msg, url, line) {
+        // Visuelle Fehlerbox rendern
+        function displayCriticalError(title, details) {
             const list = document.getElementById('recipeList');
-            if(list) {
+            const count = document.getElementById('recipeCount');
+            if (count) count.textContent = "Fehler";
+            if (list) {
                 list.innerHTML = `
-                    <div class="col-span-full bg-red-50 border border-red-200 p-6 rounded-3xl text-sm text-red-800">
-                        <strong class="block font-serif text-lg mb-2">🔴 Kritischer Skript-Fehler</strong>
-                        <p class="font-mono text-xs bg-white/50 p-3 rounded-xl border border-red-100">${msg}<br><br>Zeile: ${line}</p>
+                    <div class="col-span-full bg-red-50 border border-red-200 p-6 rounded-3xl text-sm text-red-800 shadow-sm animate-fade-in">
+                        <strong class="block font-serif text-lg mb-2">🔴 ${title}</strong>
+                        <p class="mb-3 text-red-700">Die App konnte die Anfrage nicht beenden. Das System schützt sich jetzt vor unendlichem Hängen.</p>
+                        <p class="font-mono text-xs bg-white/60 p-3 rounded-xl border border-red-100 whitespace-pre-wrap">${details}</p>
                     </div>`;
             }
+        }
+
+        // 1. Standard-Synchronfehler abfangen
+        window.onerror = function(msg, url, line) {
+            displayCriticalError("Kritischer Skript-Fehler", `${msg}\n\nZeile: ${line}`);
             return false;
         };
+
+        // 2. Unbehandelte Async/Promise-Fehler abfangen (wichtig für hängende API-Calls!)
+        window.addEventListener('unhandledrejection', function(event) {
+            displayCriticalError("Unbehandelter Async-Fehler", event.reason?.message || event.reason || "Ein asynchroner Promise-Call ist fehlgeschlagen.");
+        });
 
         const formContainer = document.getElementById('formContainer');
         const mobileAddBtn = document.getElementById('mobileAddBtn');
@@ -195,15 +209,26 @@
         }
         resetBtn.addEventListener('click', resetStudioForm);
 
+        // Ultramoderne, über AbortController zeitüberwachte Ladefunktion
         async function loadRecipes() {
+            // Erstelle einen internen Wecker (6 Sekunden bis zum harten Abbruch)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000); 
+            
             try {
-                recipeList.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400 italic">Sammlung wird geladen...</div>`;
+                recipeList.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400 italic flex items-center justify-center gap-2">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> 
+                    Sammlung wird geladen (Timeout-Schutz aktiv)...
+                </div>`;
                 
-                const response = await fetch('/api/get-recipes');
-                if (!response.ok) throw new Error(`HTTP-Status ${response.status}`);
+                // Signal an Fetch übergeben
+                const response = await fetch('/api/get-recipes', { signal: controller.signal });
+                clearTimeout(timeoutId); // API hat rechtzeitig geantwortet, Wecker löschen!
+
+                if (!response.ok) throw new Error(`HTTP-Status ${response.status} beim Abrufen der API.`);
 
                 const data = await response.json();
-                if (!Array.isArray(data)) throw new Error(data.error || "Kein gültiges Array erhalten.");
+                if (!Array.isArray(data)) throw new Error(data.error || "Die API hat kein gültiges Array geliefert.");
 
                 cachedRecipes = data;
                 recipeList.innerHTML = "";
@@ -232,4 +257,160 @@
                                 ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
                                 <button onclick="startEditing(${recipe.id})" class="text-amber-600 hover:text-amber-700 font-bold transition-colors cursor-pointer">Editieren</button>
                             </div>
-                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red
+                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
+                        </div>
+                    `;
+                    recipeList.appendChild(card);
+                });
+            } catch (e) { 
+                clearTimeout(timeoutId); // Sicherheitshalber auch im Fehlerfall stoppen
+                console.error(e);
+                
+                if (e.name === 'AbortError') {
+                    displayCriticalError("Netzwerk-Timeout (6s überschritten)", "Die API-Route '/api/get-recipes' hat nicht rechtzeitig reagiert.\n\nMögliche Ursache:\n- Supabase-Verbindung schläft (Cold Start)\n- Serverless-Dienst blockiert.");
+                } else {
+                    displayCriticalError("Fehler beim Laden der Rezepte", e.message);
+                }
+            }
+        }
+
+        window.startEditing = function(id) {
+            const recipe = cachedRecipes.find(r => r.id === id);
+            if (!recipe) return;
+
+            editingRecipeId = id;
+            recipeTitle.value = recipe.title || '';
+            recipeLink.value = recipe.link || '';
+            recipeTags.value = recipe.tags || '';
+            recipeNotes.value = recipe.notes || '';
+
+            formHeader.textContent = "Rezept verfeinern";
+            submitBtn.textContent = "Änderungen Sichern";
+            submitBtn.classList.remove('bg-gray-900');
+            submitBtn.classList.add('bg-amber-600');
+
+            if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                toggleForm();
+            } else {
+                formContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Analyse des Screenshots läuft über Gemini Vision...";
+
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Image = reader.result;
+                try {
+                    const response = await fetch('/api/fetch-recipe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.title) recipeTitle.value = data.title;
+                    if (data.tags) recipeTags.value = data.tags;
+                    if (data.notes) recipeNotes.value = data.notes;
+
+                    if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                        toggleForm();
+                    }
+                } catch (error) {
+                    recipeNotes.value = "Fehler bei der Bildanalyse.";
+                } finally {
+                    magicBtn.textContent = "🪄 MAGIC";
+                    magicBtn.disabled = false;
+                    imageUpload.value = ""; 
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        magicBtn.addEventListener('click', async () => {
+            const link = recipeLink.value.trim();
+            if (!link) return alert('Bitte zuerst einen Link einfügen!');
+            
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Webseite wird im Hintergrund ausgelesen...";
+            
+            try {
+                const response = await fetch('/api/fetch-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: link })
+                });
+                
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                
+                const data = await response.json();
+                if (data.title) recipeTitle.value = data.title;
+                if (data.tags) recipeTags.value = data.tags;
+                if (data.notes) recipeNotes.value = data.notes;
+            } catch (e) { 
+                recipeNotes.value = `• Import abgebrochen (${e.message}).\n• Nutze die 📷 Kamera-Funktion für einen Screenshot!`;
+                if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                    toggleForm();
+                }
+            } finally {
+                magicBtn.textContent = "🪄 MAGIC";
+                magicBtn.disabled = false;
+            }
+        });
+
+        recipeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: recipeTitle.value.trim(),
+                link: recipeLink.value.trim(),
+                tags: recipeTags.value.trim(),
+                notes: recipeNotes.value.trim()
+            };
+            
+            if (editingRecipeId) {
+                payload.id = editingRecipeId;
+            }
+            
+            try {
+                const response = await fetch('/api/save-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    resetStudioForm();
+                    if (window.innerWidth < 1024) toggleForm();
+                    loadRecipes();
+                } else {
+                    const errData = await response.json();
+                    alert(`Fehler beim Speichern: ${errData.error || 'Unbekannt'}`);
+                }
+            } catch (e) { console.error(e); }
+        });
+
+        window.deleteRecipe = async function(id) {
+            if (!confirm("Rezept löschen?")) return;
+            try {
+                await fetch('/api/get-recipes', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (editingRecipeId === id) resetStudioForm();
+                loadRecipes();
+            } catch(e) { console.error(e); }
+        };
+
+        // Initialer Start beim Laden
+        loadRecipes();
+    </script>
+</body>
+</html>

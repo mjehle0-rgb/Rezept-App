@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
         let cleanText = htmlText
             .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-            .replace(/<style[^>]*>([\s\S]*?)<\/script>/gi, '')
+            .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
@@ -35,10 +35,11 @@ export default async function handler(req, res) {
             return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
-        // UMSCHALTUNG AUF DAS HOCHKOMPATIBLE GEMINI 1.5 FLASH MODELL
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // JETZT MIT DER STABILEN v1 URL VON GOOGLE
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•". 
+        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•".
+        Falls im Text keine klaren Zutaten stehen, improvisiere ein kurzes, leckeres Rezept passend zum Namen "${pageTitle}".
         Antworte im JSON-Format mit den Feldern "title", "tags" und "notes". Text: ${finalContent}`;
 
         const aiResponse = await fetch(geminiUrl, {
@@ -63,12 +64,11 @@ export default async function handler(req, res) {
 
         const aiData = await aiResponse.json();
         
-        // HIER LOGGEN WIR DEN FEHLER, FALLS GOOGLE MECKERT
         if (aiData.error) {
             return res.status(200).json({
                 title: "Google API Fehler",
                 tags: "Fehler",
-                notes: `Google meldet: ${aiData.error.message}\nCode: ${aiData.error.code}\nStatus: ${aiData.error.status}`
+                notes: `Google meldet: ${aiData.error.message}`
             });
         }
 
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
             title: pageTitle, 
             tags: "Fehler", 
-            notes: `Unerwartete Antwortstruktur von Google:\n${JSON.stringify(aiData).substring(0, 300)}` 
+            notes: "Unerwartete Antwortstruktur von Google." 
         });
 
     } catch (error) {

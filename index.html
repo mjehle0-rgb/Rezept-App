@@ -63,7 +63,7 @@ export default async function handler(req, res) {
         }
 
         // ==========================================
-        // FALL B: LINK IMPORT (GEZILTER DETEKTIV-MODUS)
+        // FALL B: LINK IMPORT (GEFILTERTER DETEKTIV-MODUS)
         // ==========================================
         if (url) {
             let pageTitle = "Neues Rezept";
@@ -81,14 +81,13 @@ export default async function handler(req, res) {
                 // 1. BESCHREIBUNG ISOLIEREN: Wir fangen gezielt nur den Inhalt ab
                 const descMatch = htmlText.match(/property="og:description"\s+content="([^"]+)"/i) || 
                                   htmlText.match(/name="description"\s+content="([^"]+)"/i) ||
-                                  htmlText.match(/"shortDescription":"([^"]+)"/i); // Speziell für YouTube-interne Daten
+                                  htmlText.match(/"shortDescription":"([^"]+)"/i);
                 
                 if (descMatch && descMatch[1]) {
-                    // Bereinige Unicode-Ausreißer, die JSON crashen könnten
                     metaDescription = descMatch[1]
                         .replace(/\\n/g, '\n')
                         .replace(/\\"/g, '"')
-                        .substring(0, 4000); // Kürzen, falls extrem lang
+                        .substring(0, 4000); // Auf gesundes Maß kürzen
                 }
 
                 // 2. TITEL ISOLIEREN
@@ -101,7 +100,7 @@ export default async function handler(req, res) {
                 metaDescription = "";
             }
 
-            // Falls gar nichts gefunden wurde, brechen wir hier sanft ab
+            // Falls absolut gar nichts geholt werden konnte
             if (!metaDescription && pageTitle === "Neues Rezept") {
                 return res.status(200).json({
                     title: "Import fehlgeschlagen",
@@ -110,7 +109,7 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Der optimierte, fokussierte Prompt
+            // Der Detektiv-Prompt mit klarer Arbeitsanweisung
             const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellte Beschreibung einer Videoplattform.
             
             DEINE AUFGABE:
@@ -123,7 +122,7 @@ export default async function handler(req, res) {
             "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden.\\n• Bitte öffne das Video, klappe die Infobox auf und mache einen 📷 Screenshot für den Foto-Upload!"
 
             Antworte im exakten JSON-Format ohne Markdown-Wrapper:
-            {"title": "${pageTitle.replace(/"/g, '\\"')}", "tags": "Video, Rezept", "notes": "• 1 Block Tofu\\n• Etwas Speisestärke"}`;
+            {"title": "${pageTitle.replace(/"/g, '\\"')}", "tags": "Video, Rezept", "notes": "• Zutatenliste folgt"}`;
 
             try {
                 const aiResponse = await fetch(geminiUrl, {
@@ -139,12 +138,10 @@ export default async function handler(req, res) {
                 if (aiData.candidates && aiData.candidates[0]?.content?.parts[0]?.text) {
                     const rawText = aiData.candidates[0].content.parts[0].text.trim();
                     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        return res.status(200).json(JSON.parse(jsonMatch[0]));
-                    }
+                    if (jsonMatch) return res.status(200).json(JSON.parse(jsonMatch[0]));
                 }
             } catch (aiError) {
-                // Stiller Fallback zu den Basisdaten
+                // Stiller Fallback
             }
             
             return res.status(200).json({ 
@@ -160,7 +157,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
             title: "Import-Hinweis", 
             tags: "Fehler", 
-            notes: `• Der Server meldete ein Problem (${globalError.message}). Bitte nutze den Screenshot-Upload.` 
+            notes: `• Ein Fehler ist aufgetreten (${globalError.message}).` 
         });
     }
 }

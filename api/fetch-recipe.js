@@ -35,8 +35,8 @@ export default async function handler(req, res) {
             return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
-        // JETZT MIT DEM EXAKTEN MODELLNAMEN: gemini-1.5-flash-latest
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+        // DER WECHSEL AUF DAS MODERNE STANDARDELEMENT: gemini-2.5-flash
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
         const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•".
         Falls im Text keine klaren Zutaten stehen, improvisiere ein kurzes, leckeres Rezept passend zum Namen "${pageTitle}".
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 title: "Google API Fehler",
                 tags: "Fehler",
-                notes: `Google meldet: ${aiData.error.message}`
+                notes: `Google meldet: ${aiData.error.message}\n(Genutztes Modell: gemini-2.5-flash)`
             });
         }
 

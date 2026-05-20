@@ -24,7 +24,6 @@
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Playfair Display', serif; }
         
-        /* Exakt auf Tailwinds lg-Breakpoint (1024px) abgestimmt */
         @media (max-width: 1023px) {
             #formContainer {
                 position: fixed;
@@ -48,91 +47,100 @@
         <span id="btnIcon">＋</span>
     </button>
 
-    <div class="max-w-6xl mx-auto px-4 py-8 lg:py-12">
+    <div class="max-w-6xl mx-auto px-4 py-8 lg:py-12 flex flex-col min-h-screen justify-between">
         
-        <header class="flex justify-between items-center mb-10 lg:mb-16">
-            <div>
-                <h1 class="text-3xl lg:text-4xl font-bold font-serif text-gray-900 tracking-tight">
-                    GourmetBox <span class="text-lg italic text-amber-600 font-normal ml-1">Studio</span>
-                </h1>
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-1 font-semibold">Digital Recipe Collection</p>
-            </div>
-            <div class="hidden sm:flex bg-white border border-gray-100 shadow-sm px-3 py-1.5 rounded-full items-center gap-2">
-                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sync Active</span>
-            </div>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            
-            <div id="formContainer" class="lg:col-span-5 bg-[#FBFBFA] lg:bg-transparent overflow-y-auto no-scrollbar lg:overflow-visible">
-                <div class="h-full lg:h-auto bg-white p-6 lg:p-8 rounded-t-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-sm border-t lg:border border-gray-100 relative">
-                    
-                    <div class="lg:hidden flex justify-center mb-6">
-                        <div class="w-12 h-1.5 bg-gray-200 rounded-full"></div>
-                    </div>
-
-                    <div class="mb-8 flex justify-between items-center">
-                        <h2 id="formHeader" class="text-xl font-bold font-serif text-gray-900 italic">Neues Rezept kreieren</h2>
-                        <button id="closeFormBtn" class="lg:hidden text-gray-400 text-sm font-bold uppercase tracking-widest">Schließen</button>
-                    </div>
-
-                    <form id="recipeForm" class="space-y-6">
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren oder Screenshot hochladen</label>
-                            <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
-                                <input type="url" id="recipeLink" placeholder="Instagram, Blog, Chefkoch..." class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none min-w-0">
-                                <label class="flex items-center justify-center p-2 text-gray-400 hover:text-amber-600 cursor-pointer transition-colors text-lg shrink-0 select-none">
-                                    📷
-                                    <input type="file" id="imageUpload" accept="image/*" class="hidden">
-                                </label>
-                                <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs shrink-0 tracking-wider">
-                                    🪄 MAGIC
-                                </button>
-                            </div>
-                        </div>
-
-                        <hr class="border-gray-100">
-
-                        <div class="grid grid-cols-1 gap-5">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gericht Name</label>
-                                <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategorien</label>
-                                <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
-                            <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs tracking-widest uppercase">Leeren</button>
-                            <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-xs tracking-widest uppercase">Studio Speichern</button>
-                        </div>
-                    </form>
+        <div>
+            <header class="flex justify-between items-center mb-10 lg:mb-16">
+                <div>
+                    <h1 class="text-3xl lg:text-4xl font-bold font-serif text-gray-900 tracking-tight">
+                        GourmetBox <span class="text-lg italic text-amber-600 font-normal ml-1">Studio</span>
+                    </h1>
+                    <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-1 font-semibold">Digital Recipe Collection</p>
                 </div>
-            </div>
-
-            <div class="lg:col-span-7">
-                <div class="flex items-baseline justify-between mb-8">
-                    <h2 class="text-2xl font-bold font-serif text-gray-900 italic">Sammlung</h2>
-                    <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">Laden...</span>
+                <div class="hidden sm:flex bg-white border border-gray-100 shadow-sm px-3 py-1.5 rounded-full items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sync Active</span>
                 </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
                 
-                <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    </div>
-            </div>
+                <div id="formContainer" class="lg:col-span-5 bg-[#FBFBFA] lg:bg-transparent overflow-y-auto no-scrollbar lg:overflow-visible">
+                    <div class="h-full lg:h-auto bg-white p-6 lg:p-8 rounded-t-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-sm border-t lg:border border-gray-100 relative">
+                        
+                        <div class="lg:hidden flex justify-center mb-6">
+                            <div class="w-12 h-1.5 bg-gray-200 rounded-full"></div>
+                        </div>
 
+                        <div class="mb-8 flex justify-between items-center">
+                            <h2 id="formHeader" class="text-xl font-bold font-serif text-gray-900 italic">Neues Rezept kreieren</h2>
+                            <button id="closeFormBtn" class="lg:hidden text-gray-400 text-sm font-bold uppercase tracking-widest">Schließen</button>
+                        </div>
+
+                        <form id="recipeForm" class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren oder Screenshot hochladen</label>
+                                <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
+                                    <input type="url" id="recipeLink" placeholder="Instagram, Blog, Chefkoch..." class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none min-w-0">
+                                    <label class="flex items-center justify-center p-2 text-gray-400 hover:text-amber-600 cursor-pointer transition-colors text-lg shrink-0 select-none">
+                                        📷
+                                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                                    </label>
+                                    <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs shrink-0 tracking-wider">
+                                        🪄 MAGIC
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-100">
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gericht Name</label>
+                                    <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategorien</label>
+                                    <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
+                                <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs tracking-widest uppercase">Leeren</button>
+                                <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-xs tracking-widest uppercase">Studio Speichern</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7">
+                    <div class="flex items-baseline justify-between mb-8">
+                        <h2 class="text-2xl font-bold font-serif text-gray-900 italic">Sammlung</h2>
+                        <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">Laden...</span>
+                    </div>
+                    
+                    <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        </div>
+                </div>
+
+            </div>
         </div>
+
+        <footer class="mt-20 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 text-gray-400 text-xs">
+            <p>&copy; 2026 GourmetBox Studio. Alle Rechte vorbehalten.</p>
+            <p class="font-medium tracking-[0.2em] uppercase text-[9px]">
+                Handcrafted with 🤍 by <span class="text-gray-900 font-bold hover:text-amber-600 transition-colors duration-300 select-all">MJ DEV</span>
+            </p>
+        </footer>
+
     </div>
 
     <script>
-        // Globaler Notfall-Auffangkescher für JavaScript-Fehler
         window.onerror = function(msg, url, line) {
             const list = document.getElementById('recipeList');
             if(list) {
@@ -187,23 +195,15 @@
         }
         resetBtn.addEventListener('click', resetStudioForm);
 
-        // Gehärtete Lade-Funktion mit detaillierter Fehler-Ausgabe im UI
         async function loadRecipes() {
             try {
                 recipeList.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400 italic">Sammlung wird geladen...</div>`;
                 
                 const response = await fetch('/api/get-recipes');
-                if (!response.ok) {
-                    throw new Error(`HTTP-Status ${response.status} beim Abrufen der API.`);
-                }
+                if (!response.ok) throw new Error(`HTTP-Status ${response.status}`);
 
                 const data = await response.json();
-                
-                // Crash-Schutz: Falls Supabase ein Fehler-Objekt statt eines Arrays schickt
-                if (!Array.isArray(data)) {
-                    console.error("API-Antwort ist kein Array:", data);
-                    throw new Error(data.error || data.message || "Die API hat kein gültiges Array geliefert.");
-                }
+                if (!Array.isArray(data)) throw new Error(data.error || "Kein gültiges Array erhalten.");
 
                 cachedRecipes = data;
                 recipeList.innerHTML = "";
@@ -219,7 +219,6 @@
                     const card = document.createElement('div');
                     card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration-500 group";
                     
-                    // Saubere Vorkompilierung der Tags zur Vermeidung von Syntax-Glotzen
                     const tagsHTML = tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('');
 
                     card.innerHTML = `
@@ -233,160 +232,4 @@
                                 ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
                                 <button onclick="startEditing(${recipe.id})" class="text-amber-600 hover:text-amber-700 font-bold transition-colors cursor-pointer">Editieren</button>
                             </div>
-                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
-                        </div>
-                    `;
-                    recipeList.appendChild(card);
-                });
-            } catch (e) { 
-                console.error(e);
-                recipeCount.textContent = "Fehler";
-                recipeList.innerHTML = `
-                    <div class="col-span-full bg-amber-50 border border-amber-200 p-6 rounded-3xl text-sm text-amber-900">
-                        <strong class="block font-serif text-lg mb-2">⚠️ Fehler beim Laden der Rezepte</strong>
-                        <p class="mb-4">Die Verbindung zur Datenbank schlug fehl. Entweder blockiert Vercel oder deine Umgebungsvariablen stimmen nicht.</p>
-                        <p class="font-mono text-xs bg-white/80 p-3 rounded-xl border border-amber-100 text-red-700">Details: ${e.message}</p>
-                    </div>`;
-            }
-        }
-
-        window.startEditing = function(id) {
-            const recipe = cachedRecipes.find(r => r.id === id);
-            if (!recipe) return;
-
-            editingRecipeId = id;
-            recipeTitle.value = recipe.title || '';
-            recipeLink.value = recipe.link || '';
-            recipeTags.value = recipe.tags || '';
-            recipeNotes.value = recipe.notes || '';
-
-            formHeader.textContent = "Rezept verfeinern";
-            submitBtn.textContent = "Änderungen Sichern";
-            submitBtn.classList.remove('bg-gray-900');
-            submitBtn.classList.add('bg-amber-600');
-
-            if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
-                toggleForm();
-            } else {
-                formContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-        };
-
-        imageUpload.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            magicBtn.textContent = "⏳";
-            magicBtn.disabled = true;
-            recipeNotes.value = "Analyse des Screenshots läuft über Gemini Vision...";
-
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64Image = reader.result;
-                try {
-                    const response = await fetch('/api/fetch-recipe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: base64Image })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.title) recipeTitle.value = data.title;
-                    if (data.tags) recipeTags.value = data.tags;
-                    if (data.notes) recipeNotes.value = data.notes;
-
-                    if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
-                        toggleForm();
-                    }
-                } catch (error) {
-                    recipeNotes.value = "Fehler bei der Bildanalyse.";
-                } finally {
-                    magicBtn.textContent = "🪄 MAGIC";
-                    magicBtn.disabled = false;
-                    imageUpload.value = ""; 
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-
-        magicBtn.addEventListener('click', async () => {
-            const link = recipeLink.value.trim();
-            if (!link) return alert('Bitte zuerst einen Link einfügen!');
-            
-            magicBtn.textContent = "⏳";
-            magicBtn.disabled = true;
-            recipeNotes.value = "Webseite wird im Hintergrund ausgelesen...";
-            
-            try {
-                const response = await fetch('/api/fetch-recipe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: link })
-                });
-                
-                if (!response.ok) throw new Error(`Status ${response.status}`);
-                
-                const data = await response.json();
-                if (data.title) recipeTitle.value = data.title;
-                if (data.tags) recipeTags.value = data.tags;
-                if (data.notes) recipeNotes.value = data.notes;
-            } catch (e) { 
-                recipeNotes.value = `• Import abgebrochen (${e.message}).\n• Nutze die 📷 Kamera-Funktion für einen Screenshot!`;
-                if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
-                    toggleForm();
-                }
-            } finally {
-                magicBtn.textContent = "🪄 MAGIC";
-                magicBtn.disabled = false;
-            }
-        });
-
-        recipeForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                title: recipeTitle.value.trim(),
-                link: recipeLink.value.trim(),
-                tags: recipeTags.value.trim(),
-                notes: recipeNotes.value.trim()
-            };
-            
-            if (editingRecipeId) {
-                payload.id = editingRecipeId;
-            }
-            
-            try {
-                const response = await fetch('/api/save-recipe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    resetStudioForm();
-                    if (window.innerWidth < 1024) toggleForm();
-                    loadRecipes();
-                } else {
-                    const errData = await response.json();
-                    alert(`Fehler beim Speichern: ${errData.error || 'Unbekannt'}`);
-                }
-            } catch (e) { console.error(e); }
-        });
-
-        window.deleteRecipe = async function(id) {
-            if (!confirm("Rezept löschen?")) return;
-            try {
-                await fetch('/api/get-recipes', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                if (editingRecipeId === id) resetStudioForm();
-                loadRecipes();
-            } catch(e) { console.error(e); }
-        };
-
-        // Erstbefüllung beim Laden der App
-        loadRecipes();
-    </script>
-</body>
-</html>
+                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red

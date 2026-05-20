@@ -3,88 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Rezept Sammler</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f59e0b">
-
+    <title>Meine Rezept-Sammlung</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen pb-12">
+<body class="bg-gray-50 min-h-screen font-sans">
 
-    <header class="bg-amber-500 text-white shadow-md p-4 sticky top-0 z-10">
-        <div class="max-w-xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">🧑‍🍳 Rezept-Sammler</h1>
-            <span class="text-xs bg-amber-600 px-2 py-1 rounded-full uppercase tracking-wider font-semibold">MVP 1.2</span>
-        </div>
-    </header>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">🧑‍🍳 Rezept-Sammler</h1>
+            <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Aktiv
+            </span>
+        </header>
 
-    <main class="max-w-xl mx-auto px-4 mt-6">
-        
-        <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
-            <h2 class="text-lg font-semibold mb-3">Neues Rezept merken</h2>
-            <div class="space-y-3">
-                
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <form id="recipeForm" class="space-y-4">
                 <div class="flex gap-2">
-                    <input type="url" id="recipeLink" placeholder="Link (Instagram, TikTok, YouTube...)" 
-                           class="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                    <button id="magicBtn" type="button" title="Zutaten automatisch per KI auslesen"
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl transition flex items-center justify-center cursor-pointer">
+                    <input type="url" id="recipeLink" placeholder="Social-Media- oder Blog-Link einfügen..." 
+                           class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition">
+                    <button type="button" id="magicBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-5 py-3 rounded-xl transition flex items-center justify-center cursor-pointer">
                         🪄 <span class="hidden sm:inline ml-1 text-sm font-medium">Magic</span>
                     </button>
                 </div>
 
-                <input type="text" id="recipeTitle" placeholder="Name des Rezepts (z.B. Feta Pasta)" 
-                       class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                
-                <input type="text" id="recipeTags" placeholder="Tags mit Komma trennen (z.B. Pasta, Schnell)" 
-                       class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                
-                <textarea id="recipeNotes" rows="3" placeholder="Zutaten & Notizen (wird vom Magic-Button automatisch ausgefüllt...)" 
-                          class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm font-mono"></textarea>
-                
-                <button id="addBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium p-3 rounded-xl transition duration-200 cursor-pointer text-sm">
-                    Rezept Speichern
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Name des Gerichts</label>
+                        <input type="text" id="recipeTitle" required placeholder="z.B. Schnelle Feta-Pasta" 
+                               class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Tags (Komma-getrennt)</label>
+                        <input type="text" id="recipeTags" placeholder="z.B. Pasta, Schnell, Veggie" 
+                               class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Zutaten & Notizen</label>
+                    <textarea id="recipeNotes" rows="4" placeholder="• 250g Pasta&#10;• 1 Block Feta..." 
+                              class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-xl transition cursor-pointer">
+                    Speichern & in Cloud sichern
                 </button>
+            </form>
+        </div>
+
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Meine Rezepte</h2>
+        <div id="recipeList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             </div>
-        </section>
-
-        <section class="mb-4">
-            <div class="flex gap-2 overflow-x-auto pb-2" id="filterContainer"></div>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-semibold mb-3">Deine Sammlung</h2>
-            <div id="recipeList" class="space-y-3"></div>
-        </section>
-
-    </main>
+    </div>
 
     <script>
-        const recipeTitle = document.getElementById('recipeTitle');
+        const recipeForm = document.getElementById('recipeForm');
         const recipeLink = document.getElementById('recipeLink');
+        const magicBtn = document.getElementById('magicBtn');
+        const recipeTitle = document.getElementById('recipeTitle');
         const recipeTags = document.getElementById('recipeTags');
         const recipeNotes = document.getElementById('recipeNotes');
-        const addBtn = document.getElementById('addBtn');
-        const magicBtn = document.getElementById('magicBtn');
         const recipeList = document.getElementById('recipeList');
-        const filterContainer = document.getElementById('filterContainer');
 
-        let myRecipes = JSON.parse(localStorage.getItem('socialRecipes')) || [];
-        let activeFilter = 'Alle';
+        // 1. Rezepte beim Start aus Supabase laden
+        async function loadRecipes() {
+            recipeList.innerHTML = "<div class='col-span-full text-center py-8'><p class='text-gray-400 text-sm animate-pulse'>Lade Rezepte aus der Cloud...</p></div>";
+            try {
+                const response = await fetch('/api/get-recipes');
+                const recipes = await response.json();
 
-     // ERWEITERTE KI-LOGIK MIT DIREKTEM STATUS-FEEDBACK
+                recipeList.innerHTML = "";
+                if (!recipes || recipes.length === 0) {
+                    recipeList.innerHTML = "<div class='col-span-full text-center py-8'><p class='text-gray-400 text-sm'>Noch keine Rezepte in deiner Cloud-Datenbank.</p></div>";
+                    return;
+                }
+
+                recipes.forEach(recipe => {
+                    const tagsText = Array.isArray(recipe.tags) ? recipe.tags.join(', ') : recipe.tags;
+                    
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between transition hover:shadow-md";
+                    card.innerHTML = `
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg leading-snug">${recipe.title}</h3>
+                            <span class="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg inline-block mt-2">${tagsText || 'Allgemein'}</span>
+                            <p class="text-gray-600 text-sm mt-4 whitespace-pre-line leading-relaxed">${recipe.notes || ''}</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center text-xs">
+                            ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1">Original Link ↗</a>` : '<span></span>'}
+                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-400 hover:text-red-500 transition cursor-pointer text-base">🗑️</button>
+                        </div>
+                    `;
+                    recipeList.appendChild(card);
+                });
+            } catch (error) {
+                recipeList.innerHTML = `<div class='col-span-full text-center py-8'><p class='text-red-500 text-sm'>Fehler beim Laden: ${error.message}</p></div>`;
+            }
+        }
+
+        // 2. KI "Magic"-Button Logik
         magicBtn.addEventListener('click', async () => {
             const link = recipeLink.value.trim();
             if (!link) {
-                alert('Bitte füge zuerst einen Social-Media-Link ein!');
+                alert('Bitte füge zuerst einen Social-Media- oder Blog-Link ein!');
                 return;
             }
 
-            // Button sperren und Textfeld als internen Log nutzen
-            magicBtn.innerHTML = "⏳...";
+            magicBtn.innerHTML = "⏳";
             magicBtn.disabled = true;
-            recipeNotes.value = "Starte Analyse...\nVerbinde mit Server...";
+            recipeNotes.value = "KI analysiert Webseite und filtert Müll heraus...";
 
             try {
                 const response = await fetch('/api/fetch-recipe', {
@@ -93,145 +120,78 @@
                     body: JSON.stringify({ url: link })
                 });
 
-                recipeNotes.value += "\nAntwort vom Server erhalten. Verarbeite...";
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `Server-Status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server antwortet nicht (${response.status})`);
 
                 const data = await response.json();
-                recipeNotes.value += "\nJSON erfolgreich parst!";
 
                 if (data.title) recipeTitle.value = data.title;
                 if (data.tags) recipeTags.value = data.tags;
                 if (data.notes) recipeNotes.value = data.notes;
 
             } catch (error) {
-                console.error("Fehler im JavaScript:", error);
-                // Schreibt den exakten Fehler direkt in das große Textfeld, damit wir ihn sehen!
-                recipeNotes.value = `❌ FEHLER IM BROWSER:\n${error.message}\n\nHinweis: Wenn im Vercel-Log nichts steht, blockiert dein Browser oder AdBlocker diesen Aufruf komplett.`;
+                console.error(error);
+                recipeNotes.value = `❌ Fehler bei der Verarbeitung:\n${error.message}`;
             } finally {
                 magicBtn.innerHTML = "🪄 <span class='hidden sm:inline ml-1 text-sm font-medium'>Magic</span>";
                 magicBtn.disabled = false;
             }
-        });  
-
-        // ==========================================
-        // RESTLICHE LOGIK (SPEICHERN, RENDERN, FILTERN)
-        // ==========================================
-        function renderFilters() {
-            let allTags = ['Alle'];
-            myRecipes.forEach(recipe => {
-                if (recipe.tags) {
-                    recipe.tags.forEach(tag => {
-                        if (!allTags.includes(tag)) allTags.push(tag);
-                    });
-                }
-            });
-
-            filterContainer.innerHTML = allTags.map(tag => {
-                const isActive = tag === activeFilter;
-                const btnClass = isActive 
-                    ? "bg-amber-500 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shadow-sm transition cursor-pointer"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition cursor-pointer";
-                return `<button onclick="setFilter('${tag}')" class="${btnClass}">${tag === 'Alle' ? 'Alle' : '#' + tag}</button>`;
-            }).join('');
-        }
-
-        window.setFilter = function(tag) {
-            activeFilter = tag;
-            renderFilters();
-            renderRecipes();
-        }
-
-        function renderRecipes() {
-            const filteredRecipes = activeFilter === 'Alle' 
-                ? myRecipes 
-                : myRecipes.filter(recipe => recipe.tags && recipe.tags.includes(activeFilter));
-
-            if (filteredRecipes.length === 0) {
-                recipeList.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center py-8 text-gray-400 text-sm">Keine Rezepte gefunden.</div>`;
-                return;
-            }
-
-            recipeList.innerHTML = '';
-
-            filteredRecipes.forEach((recipe) => {
-                const originalIndex = myRecipes.indexOf(recipe);
-                const tagsArray = recipe.tags || ['Allgemein'];
-                const tagBadges = tagsArray.map(tag => `<span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md font-medium">#${tag}</span>`).join(' ');
-
-                let platformEmoji = '🔗';
-                if (recipe.link.includes('instagram.com')) platformEmoji = '📸';
-                if (recipe.link.includes('tiktok.com')) platformEmoji = '🎵';
-                if (recipe.link.includes('youtube.com') || recipe.link.includes('youtu.be')) platformEmoji = '📺';
-
-                const formattedNotes = recipe.notes 
-                    ? `<div class="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600 whitespace-pre-line font-mono bg-gray-50 p-2.5 rounded-xl">${recipe.notes}</div>` 
-                    : '';
-
-                const recipeCard = document.createElement('div');
-                recipeCard.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between transition hover:shadow-md";
-                recipeCard.innerHTML = `
-                    <div class="mb-3">
-                        <div class="flex justify-between items-start gap-2 mb-2">
-                            <h3 class="font-bold text-gray-900 leading-tight">${recipe.title}</h3>
-                            <button onclick="deleteRecipe(${originalIndex})" class="text-gray-300 hover:text-red-500 text-sm transition cursor-pointer">✕</button>
-                        </div>
-                        <div class="flex flex-wrap gap-1">
-                            ${tagBadges}
-                        </div>
-                        ${formattedNotes}
-                    </div>
-                    <a href="${recipe.link}" target="_blank" class="inline-flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold p-2.5 rounded-xl transition">
-                        ${platformEmoji} Video öffnen
-                    </a>
-                `;
-                recipeList.appendChild(recipeCard);
-            });
-        }
-
-        addBtn.addEventListener('click', () => {
-            const title = recipeTitle.value.trim();
-            const link = recipeLink.value.trim();
-            const tagsInput = recipeTags.value.trim();
-            const notes = recipeNotes.value.trim();
-
-            if (!title || !link) {
-                alert('Bitte gib mindestens einen Namen und einen Link ein!');
-                return;
-            }
-
-            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t !== '') : ['Allgemein'];
-            const newRecipe = { title, link, tags, notes };
-
-            myRecipes.unshift(newRecipe);
-            localStorage.setItem('socialRecipes', JSON.stringify(myRecipes));
-
-            recipeTitle.value = '';
-            recipeLink.value = '';
-            recipeTags.value = '';
-            recipeNotes.value = '';
-
-            activeFilter = 'Alle';
-            renderFilters();
-            renderRecipes();
         });
 
-        window.deleteRecipe = function(index) {
-            if (confirm('Möchtest du dieses Rezept wirklich löschen?')) {
-                myRecipes.splice(index, 1);
-                localStorage.setItem('socialRecipes', JSON.stringify(myRecipes));
-                renderFilters();
-                if (!filterContainer.innerHTML.includes(activeFilter)) activeFilter = 'Alle';
-                renderFilters();
-                renderRecipes();
+        // 3. Rezept in die Cloud speichern
+        recipeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newRecipe = {
+                title: recipeTitle.value.trim(),
+                link: recipeLink.value.trim(),
+                tags: recipeTags.value.trim(),
+                notes: recipeNotes.value.trim()
+            };
+
+            if (!newRecipe.title) return;
+
+            try {
+                const response = await fetch('/api/save-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newRecipe)
+                });
+
+                if (response.ok) {
+                    recipeForm.reset();
+                    loadRecipes();
+                } else {
+                    alert("Fehler beim Speichern in der Cloud-Datenbank.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Verbindungsfehler zur Datenbank.");
+            }
+        });
+
+        // 4. Rezept aus der Cloud löschen
+        window.deleteRecipe = async function(id) {
+            if (!confirm("Rezept wirklich unwiderruflich aus der Cloud löschen?")) return;
+
+            try {
+                const response = await fetch('/api/get-recipes', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+
+                if (response.ok) {
+                    loadRecipes();
+                } else {
+                    alert("Fehler beim Löschen auf dem Server.");
+                }
+            } catch (error) {
+                console.error(error);
             }
         }
 
-        renderFilters();
-        renderRecipes();
+        // Beim ersten Laden direkt die Cloud-Daten abrufen
+        loadRecipes();
     </script>
 </body>
 </html>

@@ -15,6 +15,7 @@
     <title>GourmetBox – Culinary Studio</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -23,7 +24,7 @@
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .font-serif { font-family: 'Playfair Display', serif; }
         
-        /* Smooth Mobile Overlay */
+        /* Smooth Mobile Overlay Anim */
         @media (max-width: 1024px) {
             #formContainer {
                 position: fixed;
@@ -37,7 +38,6 @@
             }
         }
         
-        /* Hide scrollbar but keep functionality */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -66,10 +66,10 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             <div id="formContainer" class="lg:col-span-5 bg-[#FBFBFA] lg:bg-transparent overflow-y-auto no-scrollbar lg:overflow-visible">
-                <div class="h-full lg:h-auto bg-white lg:bg-white p-6 lg:p-8 rounded-t-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-sm border-t lg:border border-gray-100 relative">
+                <div class="h-full lg:h-auto bg-white p-6 lg:p-8 rounded-t-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-sm border-t lg:border border-gray-100 relative">
                     
                     <div class="lg:hidden flex justify-center mb-6">
-                        <div class="w-12 h-1.5 bg-gray-200 rounded-full" id="closeHandle"></div>
+                        <div class="w-12 h-1.5 bg-gray-200 rounded-full"></div>
                     </div>
 
                     <div class="mb-8 flex justify-between items-center">
@@ -79,15 +79,23 @@
 
                     <form id="recipeForm" class="space-y-6">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren</label>
-                            <div class="flex gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren oder Screenshot hochladen</label>
+                            <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
                                 <input type="url" id="recipeLink" placeholder="Instagram, Blog, Chefkoch..." 
-                                       class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none">
-                                <button type="button" id="magicBtn" class="bg-amber-600 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs">
+                                       class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none min-w-0">
+                                
+                                <label class="flex items-center justify-center p-2 text-gray-400 hover:text-amber-600 cursor-pointer transition-colors text-lg shrink-0 select-none">
+                                    📷
+                                    <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                                </label>
+
+                                <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs shrink-0 tracking-wider">
                                     🪄 MAGIC
                                 </button>
                             </div>
                         </div>
+
+                        <hr class="border-gray-100">
 
                         <div class="grid grid-cols-1 gap-5">
                             <div class="space-y-2">
@@ -136,8 +144,15 @@
         const recipeForm = document.getElementById('recipeForm');
         const recipeList = document.getElementById('recipeList');
         const recipeCount = document.getElementById('recipeCount');
+        
+        const magicBtn = document.getElementById('magicBtn');
+        const recipeLink = document.getElementById('recipeLink');
+        const recipeTitle = document.getElementById('recipeTitle');
+        const recipeTags = document.getElementById('recipeTags');
+        const recipeNotes = document.getElementById('recipeNotes');
+        const imageUpload = document.getElementById('imageUpload');
 
-        // Toggle Logic für Mobile
+        // Toggle Steuerung für Mobile Eingabemaske
         function toggleForm() {
             const isOpen = formContainer.classList.toggle('open');
             btnIcon.textContent = isOpen ? '✕' : '＋';
@@ -149,7 +164,7 @@
         mobileAddBtn.addEventListener('click', toggleForm);
         closeFormBtn.addEventListener('click', toggleForm);
 
-        // Supabase-Daten laden
+        // 1. Rezepte aus Supabase Cloud abrufen
         async function loadRecipes() {
             try {
                 const response = await fetch('/api/get-recipes');
@@ -172,7 +187,7 @@
                             <div class="flex flex-wrap gap-2 mt-3">
                                 ${tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('')}
                             </div>
-                            <p class="text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3">${recipe.notes || ''}</p>
+                            <p class="text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3 whitespace-pre-line">${recipe.notes || ''}</p>
                         </div>
                         <div class="mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
                             ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : '<span></span>'}
@@ -184,13 +199,54 @@
             } catch (e) { console.error(e); }
         }
 
-        // Magic Button (Gemini KI)
-        magicBtn.addEventListener('click', async () => {
-            const link = document.getElementById('recipeLink').value.trim();
-            if (!link) return alert('Link einfügen!');
-            
-            magicBtn.textContent = "⏳...";
+        // 2. Bild-Uploader Logik (Screenshot Analyse)
+        imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            magicBtn.textContent = "⏳";
             magicBtn.disabled = true;
+            recipeNotes.value = "Analyse des Screenshots läuft über Gemini Vision...";
+
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Image = reader.result;
+
+                try {
+                    const response = await fetch('/api/fetch-recipe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.title) recipeTitle.value = data.title;
+                    if (data.tags) recipeTags.value = data.tags;
+                    if (data.notes) recipeNotes.value = data.notes;
+
+                    // Blendet das Formular auf Mobilgeräten automatisch ein, um das Ergebnis zu sehen
+                    if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                        toggleForm();
+                    }
+                } catch (error) {
+                    recipeNotes.value = "Fehler bei der Bildanalyse.";
+                } finally {
+                    magicBtn.textContent = "🪄 MAGIC";
+                    magicBtn.disabled = false;
+                    imageUpload.value = ""; 
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 3. Normaler Magic-Button (URL-Scraper)
+        magicBtn.addEventListener('click', async () => {
+            const link = recipeLink.value.trim();
+            if (!link) return alert('Bitte zuerst einen Link einfügen!');
+            
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Webseite wird im Hintergrund ausgelesen...";
             
             try {
                 const response = await fetch('/api/fetch-recipe', {
@@ -199,40 +255,43 @@
                     body: JSON.stringify({ url: link })
                 });
                 const data = await response.json();
-                if (data.title) document.getElementById('recipeTitle').value = data.title;
-                if (data.tags) document.getElementById('recipeTags').value = data.tags;
-                if (data.notes) document.getElementById('recipeNotes').value = data.notes;
-            } catch (e) { alert("KI-Timeout. Bitte noch mal probieren."); }
-            finally {
+                if (data.title) recipeTitle.value = data.title;
+                if (data.tags) recipeTags.value = data.tags;
+                if (data.notes) recipeNotes.value = data.notes;
+            } catch (e) { 
+                alert("Verbindung fehlgeschlagen oder Timeout."); 
+            } finally {
                 magicBtn.textContent = "🪄 MAGIC";
                 magicBtn.disabled = false;
             }
         });
 
-        // Rezept Speichern
+        // 4. In die Cloud speichern
         recipeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
-                title: document.getElementById('recipeTitle').value,
-                link: document.getElementById('recipeLink').value,
-                tags: document.getElementById('recipeTags').value,
-                notes: document.getElementById('recipeNotes').value
+                title: recipeTitle.value.trim(),
+                link: recipeLink.value.trim(),
+                tags: recipeTags.value.trim(),
+                notes: recipeNotes.value.trim()
             };
             
-            const response = await fetch('/api/save-recipe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            try {
+                const response = await fetch('/api/save-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            if (response.ok) {
-                recipeForm.reset();
-                if (window.innerWidth < 1024) toggleForm(); // Automatisch schließen auf Mobile
-                loadRecipes();
-            }
+                if (response.ok) {
+                    recipeForm.reset();
+                    if (window.innerWidth < 1024) toggleForm(); // Auf dem Handy einklappen
+                    loadRecipes();
+                }
+            } catch (e) { console.error(e); }
         });
 
-        // Löschen
+        // 5. Löschen
         window.deleteRecipe = async function(id) {
             if (!confirm("Rezept löschen?")) return;
             await fetch('/api/get-recipes', {
@@ -245,7 +304,7 @@
 
         loadRecipes();
 
-        // PWA Service Worker
+        // PWA Service Worker für die App-Installation
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGZ1bmN0aW9uKGV2ZW50KSB7fSk7', { scope: '/' });
         }

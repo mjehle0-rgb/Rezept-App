@@ -97,4 +97,177 @@
                         <hr class="border-gray-100">
 
                         <div class="grid grid-cols-1 gap-5">
-                            <div class="space
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gericht Name</label>
+                                <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" 
+                                       class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategorien</label>
+                                <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" 
+                                       class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
+                            <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" 
+                                      class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs tracking-widest uppercase">
+                                Leeren
+                            </button>
+                            <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-xs tracking-widest uppercase">
+                                Studio Speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7">
+                <div class="flex items-baseline justify-between mb-8">
+                    <h2 class="text-2xl font-bold font-serif text-gray-900 italic">Sammlung</h2>
+                    <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">0 Rezepte</span>
+                </div>
+                
+                <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const formContainer = document.getElementById('formContainer');
+        const mobileAddBtn = document.getElementById('mobileAddBtn');
+        const closeFormBtn = document.getElementById('closeFormBtn');
+        const btnIcon = document.getElementById('btnIcon');
+        const recipeForm = document.getElementById('recipeForm');
+        const recipeList = document.getElementById('recipeList');
+        const recipeCount = document.getElementById('recipeCount');
+        
+        const formHeader = document.getElementById('formHeader');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const magicBtn = document.getElementById('magicBtn');
+        const recipeLink = document.getElementById('recipeLink');
+        const recipeTitle = document.getElementById('recipeTitle');
+        const recipeTags = document.getElementById('recipeTags');
+        const recipeNotes = document.getElementById('recipeNotes');
+        const imageUpload = document.getElementById('imageUpload');
+
+        // State-Management für das Editieren
+        let cachedRecipes = [];
+        let editingRecipeId = null;
+
+        function toggleForm() {
+            const isOpen = formContainer.classList.toggle('open');
+            btnIcon.textContent = isOpen ? '✕' : '＋';
+            mobileAddBtn.classList.toggle('bg-red-500', isOpen);
+            mobileAddBtn.classList.toggle('bg-gray-900', !isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+        }
+
+        mobileAddBtn.addEventListener('click', toggleForm);
+        closeFormBtn.addEventListener('click', toggleForm);
+
+        // Formular komplett zurücksetzen
+        function resetStudioForm() {
+            recipeForm.reset();
+            editingRecipeId = null;
+            formHeader.textContent = "Neues Rezept kreieren";
+            submitBtn.textContent = "Studio Speichern";
+            submitBtn.classList.remove('bg-amber-600');
+            submitBtn.classList.add('bg-gray-900');
+        }
+        resetBtn.addEventListener('click', resetStudioForm);
+
+        // Rezepte abrufen und im Cache sichern
+        async function loadRecipes() {
+            try {
+                const response = await fetch('/api/get-recipes');
+                cachedRecipes = await response.json();
+                recipeList.innerHTML = "";
+                recipeCount.textContent = `${cachedRecipes.length} Rezepte`;
+
+                if (!cachedRecipes || cachedRecipes.length === 0) {
+                    recipeList.innerHTML = `<div class='col-span-full py-20 text-center'><p class='font-serif italic text-gray-400'>Noch keine Schätze gespeichert.</p></div>`;
+                    return;
+                }
+
+                cachedRecipes.forEach(recipe => {
+                    const tags = Array.isArray(recipe.tags) ? recipe.tags : (recipe.tags ? recipe.tags.split(',') : []);
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration-500 group";
+                    card.innerHTML = `
+                        <div>
+                            <h3 class="font-bold font-serif text-gray-900 text-xl leading-tight group-hover:text-amber-600 transition-colors">${recipe.title}</h3>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                ${tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('')}
+                            </div>
+                            <p class="text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3 whitespace-pre-line">${recipe.notes || ''}</p>
+                        </div>
+                        <div class="mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+                            <div class="flex gap-4">
+                                ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
+                                <button onclick="startEditing(${recipe.id})" class="text-amber-600 hover:text-amber-700 font-bold transition-colors cursor-pointer">Editieren</button>
+                            </div>
+                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
+                        </div>
+                    `;
+                    recipeList.appendChild(card);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // Editier-Modus aktivieren
+        window.startEditing = function(id) {
+            const recipe = cachedRecipes.find(r => r.id === id);
+            if (!recipe) return;
+
+            editingRecipeId = id;
+            recipeTitle.value = recipe.title || '';
+            recipeLink.value = recipe.link || '';
+            recipeTags.value = recipe.tags || '';
+            recipeNotes.value = recipe.notes || '';
+
+            // UI auf "Editieren" umstellen
+            formHeader.textContent = "Rezept verfeinern";
+            submitBtn.textContent = "Änderungen Sichern";
+            submitBtn.classList.remove('bg-gray-900');
+            submitBtn.classList.add('bg-amber-600');
+
+            // Auf Smartphones die Maske direkt hochschieben
+            if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                toggleForm();
+            } else {
+                formContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Bild-Uploader Logik
+        imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Analyse des Screenshots läuft über Gemini Vision...";
+
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Image = reader.result;
+                try {
+                    const response = await fetch('/api/fetch-recipe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.title) recipeTitle.value = data.title;
+                    if (data.tags) recipeTags.value = data.tags;
+                    if (data.notes) recipeNotes.value = data

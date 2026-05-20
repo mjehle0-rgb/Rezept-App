@@ -12,49 +12,40 @@ export default async function handler(req, res) {
     try {
         const response = await fetch(url, {
             headers: { 
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept-Language': 'de-DE,de;q=0.9'
             }
         });
         const htmlText = await response.text();
 
-        // Titel isolieren
         const titleMatch = htmlText.match(/<title>([\s\S]*?)<\/title>/i);
         let pageTitle = titleMatch ? titleMatch[1].replace(/- Chefkoch.*/i, '').trim() : "Social Media Rezept";
 
-        // HTML restlos säubern
         let cleanText = htmlText
             .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-            .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
+            .replace(/<style[^>]*>([\s\S]*?)<\/script>/gi, '')
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
 
-        const finalContent = cleanText.substring(0, 10000);
+        const finalContent = cleanText.substring(0, 8000);
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
-        // Wir rufen das neuere Gemini 2.5 Flash Modell auf
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        // UMSCHALTUNG AUF DAS HOCHKOMPATIBLE GEMINI 1.5 FLASH MODELL
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text einer Webseite und extrahiere:
-        1. Den Namen des Gerichts (bzw. optimiere den Titel "${pageTitle}").
-        2. Passende Tags als Komma-getrennter Text.
-        3. Die Zutatenliste als übersichtliche Aufzählung mit "•".
-        
-        WICHTIG: Falls im Text KEINE Zutaten zu finden sind (weil es eine Login-Sperre gibt), improvisiere ein kurzes, leckeres Standardrezept basierend auf dem Namen "${pageTitle}", damit der Nutzer auf jeden Fall eine Basis hat!
-        
-        Du musst im angeforderten JSON-Format antworten. Keine Markdown-Wrapper!`;
+        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•". 
+        Antworte im JSON-Format mit den Feldern "title", "tags" und "notes". Text: ${finalContent}`;
 
         const aiResponse = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt + "\n\nText:\n" + finalContent }] }],
-                // HIER IST DER TRICK: Wir zwingen Gemini, pures JSON auszugeben
+                contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -72,22 +63,27 @@ export default async function handler(req, res) {
 
         const aiData = await aiResponse.json();
         
-        // Wenn die KI geantwortet hat, parsen wir das garantiert saubere JSON direkt
+        // HIER LOGGEN WIR DEN FEHLER, FALLS GOOGLE MECKERT
+        if (aiData.error) {
+            return res.status(200).json({
+                title: "Google API Fehler",
+                tags: "Fehler",
+                notes: `Google meldet: ${aiData.error.message}\nCode: ${aiData.error.code}\nStatus: ${aiData.error.status}`
+            });
+        }
+
         if (aiData.candidates && aiData.candidates[0].content.parts[0].text) {
-            const rawJsonText = aiData.candidates[0].content.parts[0].text.trim();
-            const recipeJson = JSON.parse(rawJsonText);
+            const recipeJson = JSON.parse(aiData.candidates[0].content.parts[0].text.trim());
             return res.status(200).json(recipeJson);
         }
 
-        throw new Error("Keine Antwort von der KI-Schnittstelle.");
+        return res.status(200).json({ 
+            title: pageTitle, 
+            tags: "Fehler", 
+            notes: `Unerwartete Antwortstruktur von Google:\n${JSON.stringify(aiData).substring(0, 300)}` 
+        });
 
     } catch (error) {
-        console.error(error);
-        // Fallback, falls irgendwas komplett schiefgeht – so stürzt die App niemals ab
-        return res.status(200).json({ 
-            title: "Automatisches Rezept", 
-            tags: "Fehler", 
-            notes: `⚠️ Fehler bei der KI-Verarbeitung: ${error.message}\n\nDu kannst die Zutaten hier einfach per Hand eintragen!` 
-        });
+        return res.status(200).json({ title: "Fehler", tags: "Fehler", notes: error.message });
     }
 }

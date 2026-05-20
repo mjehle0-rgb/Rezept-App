@@ -28,30 +28,22 @@ export default async function handler(req, res) {
             .replace(/\s+/g, ' ')
             .trim();
 
-        const finalContent = cleanText.substring(0, 8000);
+        // TUNING 1: Text auf 4.000 Zeichen begrenzen (reicht völlig für Zutaten & spart enorm Zeit)
+        const finalContent = cleanText.substring(0, 4000);
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
-        // DER WECHSEL AUF DAS MODERNE STANDARDELEMENT: gemini-2.5-flash
         const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•".
-        Falls im Text keine klaren Zutaten stehen, improvisiere ein kurzes, leckeres Rezept passend zum Namen "${pageTitle}".
-        
-        Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Verwende KEINE Markdown-Formatierung wie \`\`\`json oder ähnliches. Dein Antwort-String muss direkt mit { beginnen und mit } enden.
-        
-        Format-Vorlage:
-        {
-          "title": "Name des Gerichts",
-          "tags": "Pasta, Schnell",
-          "notes": "• Zutat 1\\n• Zutat 2"
-        }
-        
-        Hier ist der Text der Webseite:
-        ${finalContent}`;
+        // TUNING 2: Kürzerer, direkterer Befehl für schnellere Verarbeitung
+        const prompt = `Extrahiere aus dem Text: Gerichtname (als "title"), Tags (Komma-getrennt als "tags") und Zutaten (als "notes", jede Zeile mit "• "). 
+        Falls keine Zutaten im Text sind, erfinde ein kurzes Rezept für "${pageTitle}".
+        Antworte NUR als JSON ohne Markdown-Wrapper.
+        Format: {"title": "", "tags": "", "notes": ""}
+        Text: ${finalContent}`;
 
         const aiResponse = await fetch(geminiUrl, {
             method: 'POST',
@@ -67,13 +59,12 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 title: "Google API Fehler",
                 tags: "Fehler",
-                notes: `Google meldet: ${aiData.error.message}\n(Genutztes Modell: gemini-2.5-flash)`
+                notes: `Google meldet: ${aiData.error.message}`
             });
         }
 
         if (aiData.candidates && aiData.candidates[0].content.parts[0].text) {
             const rawText = aiData.candidates[0].content.parts[0].text.trim();
-            
             const jsonMatch = rawText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const recipeJson = JSON.parse(jsonMatch[0]);
@@ -84,7 +75,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
             title: pageTitle, 
             tags: "Fehler", 
-            notes: "Die KI hat geantwortet, aber das Format war nicht lesbar." 
+            notes: "Formatierungsfehler der KI." 
         });
 
     } catch (error) {

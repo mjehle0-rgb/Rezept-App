@@ -6,113 +6,81 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Methode nicht erlaubt' });
 
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'Keine URL übergeben' });
+    const { url, image } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    try {
-        const response = await fetch(url, {
-            headers: { 
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept-Language': 'de-DE,de;q=0.9'
-            }
-        });
-        const htmlText = await response.text();
+    if (!apiKey) return res.status(200).json({ title: "Fehler", tags: "Setup", notes: "API-Key fehlt!" });
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-        // 1. Speziell nach Meta-Beschreibungen suchen (Hier steht bei YT/Insta oft das Rezept!)
-        let metaDescription = "";
-        const descMatch = htmlText.match(/property="og:description"\s+content="([^"]+)"/i) || 
-                          htmlText.match(/name="description"\s+content="([^"]+)"/i);
-        if (descMatch && descMatch[1]) {
-            metaDescription = descMatch[1];
-        }
+    // FALL A: Ein Screenshot wurde hochgeladen
+    if (image) {
+        try {
+            // Base64-Präfix abschneiden falls vorhanden
+            const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
 
-        // Strukturierte Daten (LD+JSON) abfangen
-        let jsonLdData = "";
-        const jsonLdMatches = htmlText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi);
-        if (jsonLdMatches) {
-            jsonLdData = jsonLdMatches.map(m => m.replace(/<[^>]+>/g, '')).join(" ").substring(0, 2000);
-        }
+            const prompt = `Du bist ein präziser Rezept-Extraktor. Analysiere diesen Screenshot einer Rezept-Infobox/Videobeschreibung.
+            1. "title": Finde den Namen des Gerichts (z.B. "KFC Style Fried Austernpilze"). Befreie ihn von Emojis.
+            2. "tags": Generiere 2-3 passende Küchen-Kategorien (z.B. "Vegan, Snack, Pilze"). Verwende NIEMALS Plattformnamen wie 'YouTube'.
+            3. "notes": Lies ALLE sichtbaren Zutaten und Mengen extrem präzise ab und liste sie mit "• " auf. Da das Bild unten abgeschnitten sein kann ("Mehr anzeigen"), liste nur das auf, was du glasklar siehst!
 
-        // Titel sauber auslesen
-        let pageTitle = "";
-        const ogTitleMatch = htmlText.match(/property="og:title"\s+content="([^"]+)"/i) || htmlText.match(/name="title"\s+content="([^"]+)"/i);
-        const standardTitleMatch = htmlText.match(/<title>([\s\S]*?)<\/title>/i);
-        
-        if (ogTitleMatch && ogTitleMatch[1]) {
-            pageTitle = ogTitleMatch[1];
-        } else if (standardTitleMatch) {
-            pageTitle = standardTitleMatch[1];
-        }
-        
-        pageTitle = pageTitle
-            .replace(/- Chefkoch.*/i, '')
-            .replace(/- YouTube.*/i, '')
-            .replace(/YouTube/i, '')
-            .trim();
+            Antworte NUR als reines JSON-Objekt ohne Markdown-Wrapper.
+            Format: {"title": "Name", "tags": "Tag1, Tag2", "notes": "• 2 große Austernpilz-Cluster\\n• ... "}`;
 
-        // Sichtbaren Webtext säubern
-        let cleanText = htmlText
-            .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-            .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+            const aiResponse = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                        ]
+                    }]
+                })
+            });
 
-        // Wir bauen ein klares Paket für die KI
-        const finalContent = `TITEL: ${pageTitle}\nBESCHREIBUNG/INFOBOX: ${metaDescription}\nMETADATA: ${jsonLdData}\nWEBTEXT: ${cleanText}`.substring(0, 6000);
-
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt!" });
-        }
-
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-        // Strengerer Prompt gegen Halluzinationen
-        const prompt = `Du bist ein präziser Rezept-Extraktor. Deine Aufgabe ist es, die exakten Zutaten aus den bereitgestellten Daten zu filtern.
-        
-        SCHRITT-FÜR-SCHRITT-ANLEITUNG:
-        1. Untersuche primär den Abschnitt "BESCHREIBUNG/INFOBOX" und "METADATA". Dort stehen bei Social Media oft die echten Zutaten.
-        2. Wenn du dort oder im "WEBTEXT" konkrete Zutaten findest, liste sie sauber mit "• " auf.
-        3. WICHTIG: Wenn im gesamten Text KEINE Zutaten oder Mengenangaben zu finden sind (weil die Seite blockiert ist), dann erfinde NICHT einfach blind irgendetwas! Schreibe stattdessen in die "notes":
-           "• [KI-Vorschlag] Da keine Zutaten im Link gefunden wurden, hier eine Idee passend zum Titel:\\n• Zutat 1\\n• Zutat 2"
-           Erfinde nur dann etwas, wenn der TITEL (${pageTitle}) ein eindeutiges Gericht beschreibt. Wenn der Titel vage ist (wie "Das hier müsst ihr sehen!!"), schreibe stattdessen: "• Keine Zutaten im Quelltext gefunden. Bitte manuell eintragen."
-
-        REGEL FÜR TAGS:
-        Nutze 2-3 kurze Küchen-Kategorien (z.B. "Pasta, Schnell"). Nutze NIEMALS Wörter wie "YouTube", "Video", "Fehler" oder "Instagram".
-
-        Antworte AUSSCHLIESSLICH als reines JSON-Objekt ohne Markdown-Wrapper.
-        Format: {"title": "${pageTitle}", "tags": "Tag1, Tag2", "notes": "• Zutat 1\\n• Zutat 2"}
-        
-        Hier sind die Daten:
-        ${finalContent}`;
-
-        const aiResponse = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        const aiData = await aiResponse.json();
-
-        if (aiData.candidates && aiData.candidates[0].content.parts[0].text) {
+            const aiData = await aiResponse.json();
             const rawText = aiData.candidates[0].content.parts[0].text.trim();
             const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const recipeJson = JSON.parse(jsonMatch[0]);
-                return res.status(200).json(recipeJson);
-            }
+            return res.status(200).json(JSON.parse(jsonMatch[0]));
+
+        } catch (error) {
+            return res.status(200).json({ title: "Bild-Fehler", tags: "Vision", notes: "Screenshot-Analyse fehlgeschlagen." });
         }
-
-        return res.status(200).json({ 
-            title: pageTitle, 
-            tags: "Manuell", 
-            notes: "• Link-Inhalt konnte nicht gelesen werden. Bitte Notizen manuell einfügen!" 
-        });
-
-    } catch (error) {
-        return res.status(200).json({ title: "Fehler", tags: "Netzwerk", notes: error.message });
     }
+
+    // FALL B: Der klassische Link-Scraper (Bleibt wie gehabt als Backup)
+    if (url) {
+        try {
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+            });
+            const htmlText = await response.text();
+            
+            let metaDescription = "";
+            const descMatch = htmlText.match(/property="og:description"\s+content="([^"]+)"/i) || htmlText.match(/name="description"\s+content="([^"]+)"/i);
+            if (descMatch) metaDescription = descMatch[1];
+
+            let pageTitle = "Kulinarische Entdeckung";
+            const titleMatch = htmlText.match(/property="og:title"\s+content="([^"]+)"/i) || htmlText.match(/<title>([\s\S]*?)<\/title>/i);
+            if (titleMatch) pageTitle = titleMatch[1].replace(/- YouTube.*/i, '').trim();
+
+            const prompt = `Extrahiere das Rezept aus diesen Daten. Falls keine Zutaten zu finden sind, liefere einen passenden [KI-Vorschlag] basierend auf dem Titel.
+            Format: {"title": "${pageTitle}", "tags": "Pasta", "notes": "• ..."}
+            Daten:\nTitel: ${pageTitle}\nBeschreibung: ${metaDescription}`;
+
+            const aiResponse = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const aiData = await aiResponse.json();
+            const jsonMatch = aiData.candidates[0].content.parts[0].text.trim().match(/\{[\s\S]*\}/);
+            return res.status(200).json(JSON.parse(jsonMatch[0]));
+        } catch (e) {
+            return res.status(200).json({ title: "Fehler", tags: "Mangelhaft", notes: "Konnte Link nicht lesen." });
+        }
+    }
+
+    return res.status(400).json({ error: 'Keine Daten geliefert' });
 }

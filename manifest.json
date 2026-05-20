@@ -1,17 +1,17 @@
 {
-  "short_name": "Rezepte",
-  "name": "Social Media Rezept-Sammler",
+  "short_name": "GourmetBox",
+  "name": "GourmetBox Studio",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1031/1031024.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2921/2921822.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "./index.html",
-  "background_color": "#f8fafc",
-  "theme_color": "#f59e0b",
+  "start_url": "/",
+  "background_color": "#FBFBFA",
+  "theme_color": "#D97706",
   "display": "standalone",
   "orientation": "portrait"
 }

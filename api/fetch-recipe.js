@@ -35,9 +35,9 @@ export default async function handler(req, res) {
             return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // JETZT MIT DEM EXAKTEN MODELLNAMEN: gemini-1.5-flash-latest
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
-        // Wir fordern das JSON jetzt direkt im Text an und geben das exakte Schema dort vor
         const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text und extrahiere den Namen des Gerichts, Tags (Komma-getrennt) und die Zutaten als Aufzählung mit "•".
         Falls im Text keine klaren Zutaten stehen, improvisiere ein kurzes, leckeres Rezept passend zum Namen "${pageTitle}".
         
@@ -58,7 +58,6 @@ export default async function handler(req, res) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }]
-                // generationConfig komplett bereinigt, um Inkompatibilitäten zu vermeiden
             })
         });
 
@@ -75,7 +74,6 @@ export default async function handler(req, res) {
         if (aiData.candidates && aiData.candidates[0].content.parts[0].text) {
             const rawText = aiData.candidates[0].content.parts[0].text.trim();
             
-            // Falls die KI trotz Verbot doch Markdown-Codeblöcke mitgeliefert hat, schneiden wir sie hier sicherheitshalber raus
             const jsonMatch = rawText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const recipeJson = JSON.parse(jsonMatch[0]);

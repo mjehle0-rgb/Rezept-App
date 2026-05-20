@@ -119,7 +119,7 @@ export default async function handler(req, res) {
             const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellte Beschreibung einer Videoplattform.
             
             DEINE AUFGABE:
-            1. Scanne den Text intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
+            1. Scanne die Video Caption intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
             2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
             3. Formatiere alle gefundenen Zutaten ordentlich untereinander mit "• ".
             4. ERFINDUNGS-VERBOT: Wenn im Text absolut KEINE Zutaten oder Lebensmittel erwähnt werden, nutze exakt den NOTFALL-TEXT.

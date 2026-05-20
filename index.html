@@ -164,7 +164,7 @@
         mobileAddBtn.addEventListener('click', toggleForm);
         closeFormBtn.addEventListener('click', toggleForm);
 
-        // 1. Rezepte aus Supabase Cloud abrufen
+        // 1. Rezepte abrufen
         async function loadRecipes() {
             try {
                 const response = await fetch('/api/get-recipes');
@@ -224,7 +224,6 @@
                     if (data.tags) recipeTags.value = data.tags;
                     if (data.notes) recipeNotes.value = data.notes;
 
-                    // Blendet das Formular auf Mobilgeräten automatisch ein, um das Ergebnis zu sehen
                     if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
                         toggleForm();
                     }
@@ -239,7 +238,7 @@
             reader.readAsDataURL(file);
         });
 
-        // 3. Normaler Magic-Button (URL-Scraper)
+        // 3. Normaler Magic-Button (URL-Scraper) mit verbesserter Fehlerbehandlung
         magicBtn.addEventListener('click', async () => {
             const link = recipeLink.value.trim();
             if (!link) return alert('Bitte zuerst einen Link einfügen!');
@@ -254,12 +253,20 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: link })
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`Server antwortete mit Status ${response.status}`);
+                }
+                
                 const data = await response.json();
                 if (data.title) recipeTitle.value = data.title;
                 if (data.tags) recipeTags.value = data.tags;
                 if (data.notes) recipeNotes.value = data.notes;
             } catch (e) { 
-                alert("Verbindung fehlgeschlagen oder Timeout."); 
+                recipeNotes.value = `• Import abgebrochen oder verlangsamt (${e.message}).\n• Bei blockierten Plattformen (YouTube Shorts, Instagram) nutze bitte die 📷 Kamera-Funktion für einen schnellen Screenshot!`;
+                if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                    toggleForm();
+                }
             } finally {
                 magicBtn.textContent = "🪄 MAGIC";
                 magicBtn.disabled = false;
@@ -285,7 +292,7 @@
 
                 if (response.ok) {
                     recipeForm.reset();
-                    if (window.innerWidth < 1024) toggleForm(); // Auf dem Handy einklappen
+                    if (window.innerWidth < 1024) toggleForm();
                     loadRecipes();
                 }
             } catch (e) { console.error(e); }
@@ -304,9 +311,13 @@
 
         loadRecipes();
 
-        // PWA Service Worker für die App-Installation
+        // SAUBERE SERVICE WORKER REGISTRIERUNG
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGZ1bmN0aW9uKGV2ZW50KSB7fSk7', { scope: '/' });
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registriert!', reg.scope))
+                    .catch(err => console.log('Service Worker Fehler:', err));
+            });
         }
     </script>
 </body>

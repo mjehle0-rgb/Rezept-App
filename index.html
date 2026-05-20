@@ -70,13 +70,44 @@
         let myRecipes = JSON.parse(localStorage.getItem('socialRecipes')) || [];
         let activeFilter = 'Alle';
 
-        // MAGIC FEATURE DUMMY-LOGIK (Wird als nächstes scharf geschaltet)
-        magicBtn.addEventListener('click', () => {
+// ECHTE KI-LOGIK FÜR DAS MAGIC FEATURE
+        magicBtn.addEventListener('click', async () => {
             const link = recipeLink.value.trim();
             if (!link) {
                 alert('Bitte füge zuerst einen Social-Media-Link ein!');
                 return;
             }
+
+            // Button in Lade-Zustand versetzen
+            magicBtn.innerHTML = "⏳ Analyse...";
+            magicBtn.disabled = true;
+
+            try {
+                // Die App ruft ihre eigene Vercel-Serverfunktion auf
+                const response = await fetch('/api/fetch-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: link })
+                });
+
+                if (!response.ok) throw new Error('Server-Fehler beim Auslesen.');
+
+                const data = await response.json();
+
+                // Gefundene KI-Daten in die Eingabefelder eintragen
+                if (data.title) recipeTitle.value = data.title;
+                if (data.tags) recipeTags.value = data.tags;
+                if (data.notes) recipeNotes.value = data.notes;
+
+            } catch (error) {
+                console.error(error);
+                alert('Hoppala, die KI konnte das Video nicht automatisch auslesen. Du kannst das Rezept aber wie gewohnt per Hand eintragen!');
+            } finally {
+                // Button wieder zurücksetzen
+                magicBtn.innerHTML = "🪄 <span class='hidden sm:inline ml-1 text-sm font-medium'>Magic</span>";
+                magicBtn.disabled = false;
+            }
+        });
 
             // Visuelles Feedback, dass die "KI" arbeitet
             magicBtn.innerHTML = "⏳...";

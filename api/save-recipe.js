@@ -15,8 +15,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Ein Titel wird zwingend benötigt.' });
         }
 
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_ANON_KEY;
+        // Flexibler Zugriff auf Umgebungsvariablen (erkennt Standard- und NEXT_PUBLIC_-Varianten)
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
             return res.status(500).json({ 

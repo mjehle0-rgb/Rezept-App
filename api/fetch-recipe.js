@@ -18,70 +18,76 @@ export default async function handler(req, res) {
         });
         const htmlText = await response.text();
 
-        // 1. SCHRITT: Seitentitel auslesen
+        // Titel isolieren
         const titleMatch = htmlText.match(/<title>([\s\S]*?)<\/title>/i);
-        const pageTitle = titleMatch ? titleMatch[1].replace(/- Chefkoch.*/i, '').trim() : "Social Media Rezept";
+        let pageTitle = titleMatch ? titleMatch[1].replace(/- Chefkoch.*/i, '').trim() : "Social Media Rezept";
 
-        // 2. SCHRITT: Radikale Reinigung des HTML-Codes
+        // HTML restlos säubern
         let cleanText = htmlText
-            .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '') // Skripte löschen
-            .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')   // CSS-Styles löschen
-            .replace(/<noscript[^>]*>([\s\S]*?)<\/noscript>/gi, '')
-            .replace(/<header[\s\S]*?<\/header>/gi, '')         // Menüs/Header löschen
-            .replace(/<footer[\s\S]*?<\/footer>/gi, '')         // Fußzeilen löschen
-            .replace(/<[^>]+>/g, ' ')                           // Alle restlichen HTML-Tags durch Leerzeichen ersetzen
-            .replace(/\s+/g, ' ')                               // Mehrfach-Leerzeichen und Umbrüche kollabieren
+            .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
+            .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
             .trim();
 
-        // Jetzt nehmen wir die ersten 15.000 Zeichen des REINEN Textes (das ist riesig ohne HTML!)
-        const finalContent = cleanText.substring(0, 15000);
+        const finalContent = cleanText.substring(0, 10000);
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return res.status(200).json({ title: pageTitle, notes: "Fehler: API-Key fehlt in Vercel!" });
+            return res.status(200).json({ title: pageTitle, tags: "Fehler", notes: "API-Key fehlt in Vercel!" });
         }
 
+        // Wir rufen das neuere Gemini 2.5 Flash Modell auf
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-        // Wir sagen der KI ganz deutlich, dass sie den Text durchforsten soll
-        const prompt = `Du bist ein präziser Küchenchef-Assistent. Analysiere den folgenden bereinigten Text einer Webseite.
-        Suche nach Kochzutaten, Mengenangaben und Zubereitungsschritten.
+        const prompt = `Du bist ein präziser Küchenchef. Analysiere den folgenden Text einer Webseite und extrahiere:
+        1. Den Namen des Gerichts (bzw. optimiere den Titel "${pageTitle}").
+        2. Passende Tags als Komma-getrennter Text.
+        3. Die Zutatenliste als übersichtliche Aufzählung mit "•".
         
-        Erstelle daraus ein strukturiertes Rezept. Falls du keine klaren Zutaten findest, improvisiere ein kurzes, passendes Standardrezept basierend auf dem Namen des Gerichts "${pageTitle}".
+        WICHTIG: Falls im Text KEINE Zutaten zu finden sind (weil es eine Login-Sperre gibt), improvisiere ein kurzes, leckeres Standardrezept basierend auf dem Namen "${pageTitle}", damit der Nutzer auf jeden Fall eine Basis hat!
         
-        Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt in exakt diesem Format (ohne Markdown-Formatierung wie \`\`\`json):
-        {
-          "title": "${pageTitle}",
-          "tags": "Pasta, Schnell",
-          "notes": "• Zutat 1\\n• Zutat 2"
-        }
-        
-        Hier ist der bereinigte Text der Webseite:
-        ${finalContent}`;
+        Du musst im angeforderten JSON-Format antworten. Keine Markdown-Wrapper!`;
 
         const aiResponse = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt + "\n\nText:\n" + finalContent }] }],
+                // HIER IST DER TRICK: Wir zwingen Gemini, pures JSON auszugeben
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "STRING" },
+                            tags: { type: "STRING" },
+                            notes: { type: "STRING" }
+                        },
+                        required: ["title", "tags", "notes"]
+                    }
+                }
+            })
         });
 
         const aiData = await aiResponse.json();
         
-        if (!aiData.candidates || !aiData.candidates[0].content.parts[0].text) {
-            return res.status(200).json({ title: pageTitle, tags: "Import", notes: "Keine Zutaten im Text gefunden." });
-        }
-
-        const rawText = aiData.candidates[0].content.parts[0].text;
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-            const recipeJson = JSON.parse(jsonMatch[0]);
+        // Wenn die KI geantwortet hat, parsen wir das garantiert saubere JSON direkt
+        if (aiData.candidates && aiData.candidates[0].content.parts[0].text) {
+            const rawJsonText = aiData.candidates[0].content.parts[0].text.trim();
+            const recipeJson = JSON.parse(rawJsonText);
             return res.status(200).json(recipeJson);
         }
 
-        return res.status(200).json({ title: pageTitle, tags: "Import", notes: "Rezept konnte nicht strukturiert werden." });
+        throw new Error("Keine Antwort von der KI-Schnittstelle.");
 
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        console.error(error);
+        // Fallback, falls irgendwas komplett schiefgeht – so stürzt die App niemals ab
+        return res.status(200).json({ 
+            title: "Automatisches Rezept", 
+            tags: "Fehler", 
+            notes: `⚠️ Fehler bei der KI-Verarbeitung: ${error.message}\n\nDu kannst die Zutaten hier einfach per Hand eintragen!` 
+        });
     }
 }

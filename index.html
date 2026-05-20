@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="GourmetBox">
+    <meta name="theme-color" content="#D97706">
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
     
     <title>GourmetBox – Meine Rezept-Sammlung</title>
     
@@ -25,7 +30,6 @@
     <div class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-amber-50/60 to-transparent -z-10"></div>
 
     <div class="max-w-5xl mx-auto px-4 py-12">
-        
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
             <div>
                 <h1 class="text-4xl font-bold font-serif text-gray-900 tracking-tight flex items-center gap-2">
@@ -39,7 +43,6 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
             <div class="lg:col-span-5 bg-white p-6 rounded-3xl shadow-xs border border-gray-100/80 sticky top-6">
                 <div class="mb-6">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -51,8 +54,7 @@
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rezept-Link extrahieren</label>
                         <div class="flex gap-2 p-1.5 bg-gray-50/80 border border-gray-200/60 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
-                            <input type="url" id="recipeLink" placeholder="Instagram, YouTube, Chefkoch..." 
-                                   class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none placeholder-gray-400">
+                            <input type="url" id="recipeLink" placeholder="Instagram, YouTube, Chefkoch..." class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none placeholder-gray-400">
                             <button type="button" id="magicBtn" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium px-4 py-2 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer text-sm gap-1.5">
                                 <span>🪄</span> <span class="font-semibold">Magic</span>
                             </button>
@@ -63,20 +65,17 @@
 
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Name des Gerichts</label>
-                        <input type="text" id="recipeTitle" required placeholder="z.B. Zitronen-Salbei-Pasta" 
-                               class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400">
+                        <input type="text" id="recipeTitle" required placeholder="z.B. Zitronen-Salbei-Pasta" class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400">
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kategorien / Tags</label>
-                        <input type="text" id="recipeTags" placeholder="z.B. Pasta, Schnell, Veggie" 
-                               class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400">
+                        <input type="text" id="recipeTags" placeholder="z.B. Pasta, Schnell, Veggie" class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400">
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Zutaten & Zubereitung</label>
-                        <textarea id="recipeNotes" rows="5" placeholder="Füge hier Zutaten oder Notizen hinzu..." 
-                                  class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400 leading-relaxed"></textarea>
+                        <textarea id="recipeNotes" rows="5" placeholder="Füge hier Zutaten oder Notizen hinzu..." class="w-full bg-gray-50/50 border border-gray-200/60 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-gray-400 leading-relaxed"></textarea>
                     </div>
 
                     <button type="submit" class="w-full bg-gray-900 hover:bg-amber-600 text-white hover:text-white font-semibold py-3.5 rounded-xl transition-all shadow-xs cursor-pointer text-sm">
@@ -89,11 +88,8 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold font-serif text-gray-900">Gesammelte kulinarische Schätze</h2>
                 </div>
-                
-                <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    </div>
+                <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
             </div>
-
         </div>
     </div>
 
@@ -106,24 +102,11 @@
         const recipeNotes = document.getElementById('recipeNotes');
         const recipeList = document.getElementById('recipeList');
 
-        // 1. Rezepte aus der Cloud laden (mit edlem Skelett-Lade-Effekt)
         async function loadRecipes() {
             recipeList.innerHTML = `
                 <div class="bg-white p-5 rounded-2xl border border-gray-100 animate-pulse space-y-4">
                     <div class="h-5 bg-gray-200 rounded-md w-2/3"></div>
                     <div class="h-4 bg-gray-100 rounded-md w-1/4"></div>
-                    <div class="space-y-2 pt-2">
-                        <div class="h-3 bg-gray-100 rounded-md"></div>
-                        <div class="h-3 bg-gray-100 rounded-md w-5/6"></div>
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl border border-gray-100 animate-pulse space-y-4 hidden sm:block">
-                    <div class="h-5 bg-gray-200 rounded-md w-1/2"></div>
-                    <div class="h-4 bg-gray-100 rounded-md w-1/3"></div>
-                    <div class="space-y-2 pt-2">
-                        <div class="h-3 bg-gray-100 rounded-md"></div>
-                        <div class="h-3 bg-gray-100 rounded-md w-4/5"></div>
-                    </div>
                 </div>
             `;
             try {
@@ -136,7 +119,6 @@
                         <div class='col-span-full text-center py-16 bg-white rounded-3xl border border-gray-100 p-8'>
                             <span class='text-4xl block mb-3'>🍽️</span>
                             <p class='text-gray-400 font-serif italic text-lg'>Dein GourmetBox-Studio ist noch leer.</p>
-                            <p class='text-xs text-gray-400 mt-1'>Füge oben einen Link ein, um zu starten.</p>
                         </div>
                     `;
                     return;
@@ -144,11 +126,9 @@
 
                 recipes.forEach(recipe => {
                     const tagsArray = Array.isArray(recipe.tags) ? recipe.tags : (recipe.tags ? recipe.tags.split(',') : []);
-                    
                     const card = document.createElement('div');
-                    card.className = "bg-white p-5 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0,015)] border border-gray-100 flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] hover:shadow-[0_8px_24px_rgba(0,0,0,0,04)] group";
+                    card.className = "bg-white p-5 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.015)] border border-gray-100 flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] group";
                     
-                    // Tags in kleine edle Badges umwandeln
                     const tagsHTML = tagsArray.map(tag => 
                         `<span class="text-[10px] font-semibold text-amber-800 bg-amber-50/60 border border-amber-100 px-2 py-0.5 rounded-md">${tag.trim()}</span>`
                     ).join(' ') || `<span class="text-[10px] font-semibold text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">Allgemein</span>`;
@@ -171,93 +151,69 @@
             }
         }
 
-        // 2. Magic-Button
         magicBtn.addEventListener('click', async () => {
             const link = recipeLink.value.trim();
-            if (!link) {
-                alert('Bitte füge zuerst einen Link ein!');
-                return;
-            }
+            if (!link) return alert('Bitte füge zuerst einen Link ein!');
 
-            magicBtn.innerHTML = "<span class='animate-spin block'>⏳</span>";
+            magicBtn.innerHTML = "⏳";
             magicBtn.disabled = true;
-            recipeNotes.value = "Künstliche Intelligenz liest Zutaten aus...";
-
             try {
                 const response = await fetch('/api/fetch-recipe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: link })
                 });
-
-                if (!response.ok) throw new Error(`Fehler (${response.status})`);
                 const data = await response.json();
-
                 if (data.title) recipeTitle.value = data.title;
                 if (data.tags) recipeTags.value = data.tags;
                 if (data.notes) recipeNotes.value = data.notes;
-
             } catch (error) {
                 console.error(error);
-                recipeNotes.value = `❌ Fehler bei der Verarbeitung:\n${error.message}`;
             } finally {
                 magicBtn.innerHTML = "🪄 <span class='hidden sm:inline ml-1 text-sm font-medium'>Magic</span>";
                 magicBtn.disabled = false;
             }
         });
 
-        // 3. Speichern
         recipeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const newRecipe = {
                 title: recipeTitle.value.trim(),
                 link: recipeLink.value.trim(),
                 tags: recipeTags.value.trim(),
                 notes: recipeNotes.value.trim()
             };
-
             try {
                 const response = await fetch('/api/save-recipe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newRecipe)
                 });
-
                 if (response.ok) {
                     recipeForm.reset();
                     loadRecipes();
-                } else {
-                    alert("Fehler beim Speichern.");
                 }
-            } catch (error) {
-                console.error(error);
-                alert("Verbindungsfehler.");
-            }
+            } catch (error) { console.error(error); }
         });
 
-        // 4. Löschen
         window.deleteRecipe = async function(id) {
             if (!confirm("Rezept löschen?")) return;
-
             try {
                 const response = await fetch('/api/get-recipes', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: id })
                 });
-
-                if (response.ok) {
-                    loadRecipes();
-                } else {
-                    alert("Fehler beim Löschen.");
-                }
-            } catch (error) {
-                console.error(error);
-            }
+                if (response.ok) loadRecipes();
+            } catch (error) { console.error(error); }
         }
 
         loadRecipes();
+
+        // MINI SERVICE-WORKER FÜR DIE INSTALLATIONS-BERECHTIGUNG
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGZ1bmN0aW9uKGV2ZW50KSB7fSk7', { scope: '/' });
+        }
     </script>
 </body>
 </html>

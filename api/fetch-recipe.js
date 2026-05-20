@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // CORS-Header sofort setzen, damit der Browser immer mit uns reden darf
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -7,7 +6,6 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Methode nicht erlaubt' });
 
-    // HIER STARTET DAS GLOBALE SICHERHEITSNETZ
     try {
         const { url, image } = req.body || {};
         const apiKey = process.env.GEMINI_API_KEY;
@@ -49,12 +47,123 @@ export default async function handler(req, res) {
                 });
 
                 const aiData = await aiResponse.json();
+                if (aiData.candidates && aiData.candidates[0]?.content?.parts[0]?.text) {
+                    const rawText = aiData.candidates[0].content.parts[0].text.trim();
+                    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) return res.status(200).json(JSON.parse(jsonMatch[0]));
+                }
+                throw new Error("Gefundenes Format ungültig.");
+            } catch (imgError) {
+                return res.status(200).json({ 
+                    title: "Bild-Analyse fehlgeschlagen", 
+                    tags: "Kamera", 
+                    notes: `• Fehler beim Lesen des Screenshots.\n• Bitte trage die Daten manuell ein.` 
+                });
+            }
+        }
+
+        // ==========================================
+        // FALL B: LINK IMPORT (DETEKTIV-MODUS)
+        // ==========================================
+        if (url) {
+            let pageTitle = "Neues Rezept";
+            let metaDescription = "";
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept-Language': 'de-DE,de;q=0.9'
+                    }
+                });
+                const htmlText = await response.text();
+                
+                // 1. BESCHREIBUNG ISOLIEREN
+                const descMatch = htmlText.match(/property="og:description"\s+content="([^"]+)"/i) || 
+                                  htmlText.match(/name="description"\s+content="([^"]+)"/i) ||
+                                  htmlText.match(/"shortDescription":"([^"]+)"/i);
+                
+                if (descMatch && descMatch[1]) {
+                    metaDescription = descMatch[1]
+                        .replace(/\\n/g, '\n')
+                        .replace(/\\"/g, '"')
+                        .substring(0, 4000); 
+                }
+
+                // 2. TITEL ISOLIEREN (Sichere Methode, die das Copy-Paste nicht kaputt macht)
+                const titleMatch = htmlText.match(/property="og:title"\s+content="([^"]+)"/i);
+                
+                if (titleMatch && titleMatch[1]) {
+                    pageTitle = titleMatch[1];
+                } else if (htmlText.indexOf("<title>") !== -1) {
+                    // Simpler Split statt Regex verhindert den Kopier-Bug
+                    pageTitle = htmlText.split("<title>")[1].split("</")[0]; 
+                }
+
+                pageTitle = pageTitle.replace(/- YouTube.*/i, '').replace(/YouTube/i, '').trim();
+                
+            } catch (fetchError) {
+                metaDescription = "";
+            }
+
+            // Falls absolut gar nichts geholt werden konnte
+            if (!metaDescription && pageTitle === "Neues Rezept") {
+                return res.status(200).json({
+                    title: "Import fehlgeschlagen",
+                    tags: "Info",
+                    notes: "• Die Plattform blockiert den automatischen Zugriff vollständig.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot!"
+                });
+            }
+
+            // Der Detektiv-Prompt
+            const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellte Beschreibung einer Videoplattform.
+            
+            DEINE AUFGABE:
+            1. Scanne den Text intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
+            2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
+            3. Formatiere alle gefundenen Zutaten ordentlich untereinander mit "• ".
+            4. ERFINDUNGS-VERBOT: Wenn im Text absolut KEINE Zutaten oder Lebensmittel erwähnt werden, nutze exakt den NOTFALL-TEXT.
+
+            NOTFALL-TEXT:
+            "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden.\\n• Bitte öffne das Video, klappe die Infobox auf und mache einen 📷 Screenshot für den Foto-Upload!"
+
+            Antworte im exakten JSON-Format ohne Markdown-Wrapper:
+            {"title": "${pageTitle.replace(/"/g, '\\"')}", "tags": "Video, Rezept", "notes": "• Zutatenliste folgt"}`;
+
+            try {
+                const aiResponse = await fetch(geminiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt + `\n\nDATEN ZUR ANALYSE:\nTitel: ${pageTitle}\nBeschreibung:\n${metaDescription}` }] }]
+                    })
+                });
+
+                const aiData = await aiResponse.json();
                 
                 if (aiData.candidates && aiData.candidates[0]?.content?.parts[0]?.text) {
                     const rawText = aiData.candidates[0].content.parts[0].text.trim();
                     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        return res.status(200).json(JSON.parse(jsonMatch[0]));
-                    }
+                    if (jsonMatch) return res.status(200).json(JSON.parse(jsonMatch[0]));
                 }
-                throw new Error("KI lieferte kein gültiges JSON.");
+            } catch (aiError) {
+                // Stiller Fallback
+            }
+            
+            return res.status(200).json({ 
+                title: pageTitle, 
+                tags: "Video", 
+                notes: "• Die Detailanalyse schlug fehl.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot der Infobox!" 
+            });
+        }
+
+        return res.status(400).json({ error: 'Keine Daten geliefert' });
+
+    } catch (globalError) {
+        return res.status(200).json({ 
+            title: "Import-Hinweis", 
+            tags: "Fehler", 
+            notes: `• Ein Fehler ist aufgetreten (${globalError.message}).` 
+        });
+    }
+}

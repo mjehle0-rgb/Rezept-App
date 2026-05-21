@@ -46,7 +46,7 @@ Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
                             ]
                         }],
                         generationConfig: {
-                            responseMimeType: "application/json"
+                            response_mime_type: "application/json"
                         }
                     })
                 });
@@ -144,7 +144,7 @@ Wenn KEINE Zutaten vorhanden sind, schreib: "• Keine Zutaten in der Beschreibu
                             parts: [{ text: prompt }]
                         }],
                         generationConfig: {
-                            responseMimeType: "application/json"
+                            response_mime_type: "application/json"
                         }
                     })
                 });

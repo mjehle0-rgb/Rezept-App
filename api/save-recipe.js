@@ -15,13 +15,12 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Ein Titel wird zwingend benötigt.' });
         }
 
-        // Flexibler Zugriff auf Umgebungsvariablen (erkennt Standard- und NEXT_PUBLIC_-Varianten)
         const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
             return res.status(500).json({ 
-                error: 'Datenbank-Verbindung fehlgeschlagen. Umgebungsvariablen (SUPABASE_URL / SUPABASE_ANON_KEY) prüfen!' 
+                error: 'Datenbank-Verbindung fehlgeschlagen. Umgebungsvariablen prüfen!' 
             });
         }
 
@@ -30,6 +29,7 @@ export default async function handler(req, res) {
         if (id) {
             // ==========================================
             // FALL 1: EDITIEREN (Bestehendes Rezept aktualisieren)
+            // -> Erwartet ein einzelnes Objekt {}
             // ==========================================
             supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${id}`, {
                 method: 'PATCH',
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
         } else {
             // ==========================================
             // FALL 2: NEUANLAGE (Frisches Rezept einspeisen)
+            // -> Erwartet zwingend ein Array von Objekten [{}]
             // ==========================================
             supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/recipes`, {
                 method: 'POST',
@@ -58,12 +59,12 @@ export default async function handler(req, res) {
                     'Content-Type': 'application/json',
                     'Prefer': 'return=representation'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify([{ 
                     title, 
                     link: link || null, 
                     tags: tags || '', 
                     notes: notes || '' 
-                })
+                }])
             });
         }
 
@@ -75,7 +76,6 @@ export default async function handler(req, res) {
 
         const responseData = await supabaseResponse.json();
 
-        // Erfolgreiche Rückmeldung ans Frontend
         return res.status(200).json({ 
             success: true, 
             message: id ? 'Rezept erfolgreich aktualisiert!' : 'Rezept erfolgreich erstellt!',

@@ -1,22 +1,29 @@
 // ==========================================
-// GLOBALE VARIABLEN & APP STATE
+// CENTRAL APP STATE
 // ==========================================
-let allRecipes = [];       // Speichert permanent alle Rezepte aus Supabase
-let activeFilterTag = null; // Merkt sich die aktuell gewählte Kategorie-Pill
+let allRecipes = [];        // Daten-Backup aus Supabase
+let activeFilterTag = null;  // Aktive Filter-Pill
 
-// Supabase-Konfiguration (Vite-Style)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// App-Start
+// Startschuss bei Seitenlade-Event
 document.addEventListener('DOMContentLoaded', () => {
-    loadRecipesFromSupabase();
+    loadRecipes();
+    
+    // Suchfeld-Listener für flüssige Live-Echtzeitsuche
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilterAndSearch);
+    }
 });
 
 // ==========================================
-// 1. REZEPTE AUS SUPABASE LASSEN
+// API-AKTIONEN (FETCH & PUSH)
 // ==========================================
-async function loadRecipesFromSupabase() {
+
+// 1. Rezepte aus Supabase laden
+async function loadRecipes() {
     try {
         const response = await fetch(`${SUPABASE_URL}/rest/v1/recipes?select=*`, {
             method: 'GET',
@@ -26,120 +33,120 @@ async function loadRecipesFromSupabase() {
                 'Content-Type': 'application/json'
             }
         });
-
-        if (!response.ok) throw new Error('Fehler beim Abrufen der Rezepte');
+        if (!response.ok) throw new Error('Download fehlgeschlagen');
         
         allRecipes = await response.json();
         
-        // UI rendern
         renderFilterBar();
         applyFilterAndSearch();
-
-    } catch (error) {
-        console.error('Datenbank-Fehler:', error);
-        const container = document.getElementById('recipes-container');
-        if (container) {
-            container.innerHTML = `
-                <div class="text-center py-8 text-red-500 font-medium">
-                    Fehler beim Laden der Rezepte. Bitte Verbindung prüfen.
-                </div>`;
-        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('recipes-container').innerHTML = `<p class="text-center text-red-500 py-6">Fehler beim Laden der Datenbank.</p>`;
     }
 }
 
+// 2. Rezept speichern (über deine gefixte Backend-Route)
+window.handleFormSubmit = async function(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('recipe-id').value;
+    const title = document.getElementById('form-title').value;
+    const link = document.getElementById('form-link').value;
+    const tags = document.getElementById('form-tags').value; // Kommt als String, Backend spaltet es auf!
+    const notes = document.getElementById('form-notes').value;
+
+    try {
+        const response = await fetch('/api/save-recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id || null, title, link, tags, notes })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Fehler beim Speichern');
+
+        closeModal();
+        loadRecipes(); // Liste erfrischen
+    } catch (err) {
+        alert("Speicherfehler: " + err.message);
+    }
+};
+
 // ==========================================
-// 2. FILTERBAR GENERIEREN (REPARIERT)
+// FILTERS-LOGIK & RENDER ENGINE
 // ==========================================
+
+// Baut die wischbare Pill-Filterbar oben auf
 function renderFilterBar() {
     const filterContainer = document.getElementById('filter-container');
     if (!filterContainer) return;
 
-    // Alle einzigartigen Tags sammeln
     const tagsSet = new Set();
-    allRecipes.forEach(recipe => {
-        if (Array.isArray(recipe.tags)) {
-            recipe.tags.forEach(tag => {
-                if (tag && tag.trim() !== '') tagsSet.add(tag.trim());
-            });
+    allRecipes.forEach(r => {
+        if (Array.isArray(r.tags)) {
+            r.tags.forEach(t => { if(t && t.trim() !== '') tagsSet.add(t.trim()); });
         }
     });
-    
     const sortedTags = Array.from(tagsSet).sort();
 
-    // HTML für Buttons aufbauen (Der Fehler am Zeilenende wurde entfernt!)
-    let filterHtml = `
+    // "Alle"-Button
+    let html = `
         <button onclick="setFilterTag(null)" class="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 snap-start shrink-0 cursor-pointer shadow-xs
-            ${!activeFilterTag 
-                ? 'bg-amber-600 text-white shadow-sm scale-105 font-bold' 
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-200'}">
+            ${!activeFilterTag ? 'bg-amber-600 text-white shadow-xs scale-105 font-bold' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}">
             Alle 🍽️
         </button>
     `;
 
+    // Kategorie-Buttons
     sortedTags.forEach(tag => {
         const isActive = activeFilterTag === tag;
-        filterHtml += `
+        html += `
             <button onclick="setFilterTag('${tag}')" class="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 snap-start shrink-0 cursor-pointer shadow-xs
-                ${isActive 
-                    ? 'bg-amber-600 text-white shadow-sm scale-105 font-bold' 
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-200'}">
+                ${isActive ? 'bg-amber-600 text-white shadow-xs scale-105 font-bold' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}">
                 ${tag}
             </button>
         `;
     });
 
-    filterContainer.innerHTML = filterHtml;
+    filterContainer.innerHTML = html;
 }
 
-// ==========================================
-// 3. EVENT-STEUERUNG FÜR FILTER & SUCHE
-// ==========================================
+// Wird beim Tap auf ein Tag ausgelöst
 window.setFilterTag = function(tag) {
     activeFilterTag = (activeFilterTag === tag) ? null : tag;
     renderFilterBar();
     applyFilterAndSearch();
 };
 
-window.handleSearchOrFilterChange = function() {
-    applyFilterAndSearch();
-};
-
+// Berechnet Filter + Textsuche parallel
 function applyFilterAndSearch() {
-    const searchInput = document.getElementById('search-input');
-    const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const query = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
 
-    const filteredRecipes = allRecipes.filter(recipe => {
+    const filtered = allRecipes.filter(recipe => {
         const matchesTag = !activeFilterTag || (Array.isArray(recipe.tags) && recipe.tags.includes(activeFilterTag));
-        const matchesSearch = !searchQuery || 
-            recipe.title.toLowerCase().includes(searchQuery) || 
-            (recipe.notes && recipe.notes.toLowerCase().includes(searchQuery));
-
+        const matchesSearch = !query || 
+            recipe.title.toLowerCase().includes(query) || 
+            (recipe.notes && recipe.notes.toLowerCase().includes(query));
         return matchesTag && matchesSearch;
     });
 
-    renderRecipeGrid(filteredRecipes);
+    renderRecipeGrid(filtered);
 }
 
-// ==========================================
-// 4. REZEPTE INS GRID ZEICHNEN
-// ==========================================
-function renderRecipeGrid(recipesToRender) {
+// Zeichnet die Karten ins Grid
+function renderRecipeGrid(recipes) {
     const container = document.getElementById('recipes-container');
     if (!container) return;
-
     container.innerHTML = '';
 
-    if (recipesToRender.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200 p-6">
-                <p class="text-gray-400 text-sm">Keine passenden Rezepte gefunden.</p>
-            </div>`;
+    if (recipes.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-gray-400 text-sm">Keine Rezepte gefunden.</div>`;
         return;
     }
 
-    recipesToRender.forEach(recipe => {
+    recipes.forEach(recipe => {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl shadow-xs border border-gray-100 p-4 relative hover:shadow-md transition-all duration-200';
+        card.className = 'bg-white rounded-2xl border border-gray-100 p-4 relative shadow-xs hover:shadow-md transition-all duration-200';
         
         let tagsHtml = '';
         if (Array.isArray(recipe.tags)) {
@@ -149,20 +156,39 @@ function renderRecipeGrid(recipesToRender) {
         }
 
         card.innerHTML = `
-            <div class="pr-8">
+            <div class="pr-12">
                 <h3 class="font-bold text-gray-800 text-base leading-tight">${recipe.title}</h3>
                 ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-xs text-amber-600 hover:underline inline-flex items-center gap-0.5 mt-1 break-all">${recipe.link}</a>` : ''}
                 ${recipe.notes ? `<p class="text-xs text-gray-500 mt-2 line-clamp-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100">${recipe.notes}</p>` : ''}
             </div>
-            <div class="flex flex-wrap gap-1 mt-3">
-                ${tagsHtml}
-            </div>
+            <button onclick="editRecipe(${JSON.stringify(recipe).replace(/"/g, '&quot;')})" class="absolute top-4 right-4 text-gray-400 hover:text-amber-600 text-xs font-medium">Bearbeiten</button>
+            <div class="flex flex-wrap gap-1 mt-3">${tagsHtml}</div>
         `;
         container.appendChild(card);
     });
 }
 
-// Dummy-Definition für dein bestehendes Modal
-window.openRecipeModal = function() {
-    alert("Modal wird geöffnet (Verknüpfe hier deine bestehende Modal-Funktion!)");
+// ==========================================
+// MODAL STEUERUNG (UI ACTIONS)
+// ==========================================
+window.openModal = function() {
+    document.getElementById('recipe-form').reset();
+    document.getElementById('recipe-id').value = '';
+    document.getElementById('modal-title').innerText = 'Neues Rezept';
+    document.getElementById('recipe-modal').classList.remove('hidden');
+};
+
+window.closeModal = function() {
+    document.getElementById('recipe-modal').classList.add('hidden');
+};
+
+window.editRecipe = function(recipe) {
+    document.getElementById('recipe-id').value = recipe.id;
+    document.getElementById('form-title').value = recipe.title;
+    document.getElementById('form-link').value = recipe.link || '';
+    document.getElementById('form-tags').value = Array.isArray(recipe.tags) ? recipe.tags.join(', ') : '';
+    document.getElementById('form-notes').value = recipe.notes || '';
+    
+    document.getElementById('modal-title').innerText = 'Rezept bearbeiten';
+    document.getElementById('recipe-modal').classList.remove('hidden');
 };

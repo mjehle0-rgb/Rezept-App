@@ -52,13 +52,20 @@ Antworte NUR mit JSON (keine anderen Zeichen):
                     const responseText = aiData.candidates[0].content.parts[0].text;
                     try {
                         const jsonResult = JSON.parse(responseText);
-                        return res.status(200).json(jsonResult);
+                        // WICHTIG: Füge einen Platzhalter-Link hinzu für Foto-Rezepte
+                        return res.status(200).json({
+                            ...jsonResult,
+                            link: jsonResult.link || "📷 Foto-Analyse"
+                        });
                     } catch (e) {
                         // Versuche JSON aus Text zu extrahieren
                         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
                             const jsonResult = JSON.parse(jsonMatch[0]);
-                            return res.status(200).json(jsonResult);
+                            return res.status(200).json({
+                                ...jsonResult,
+                                link: jsonResult.link || "📷 Foto-Analyse"
+                            });
                         }
                     }
                 }
@@ -68,7 +75,8 @@ Antworte NUR mit JSON (keine anderen Zeichen):
                 return res.status(200).json({ 
                     title: "Bild-Analyse fehlgeschlagen", 
                     tags: "Kamera", 
-                    notes: `• Fehler beim Lesen des Screenshots.\n• Bitte trage die Daten manuell ein.` 
+                    notes: `• Fehler beim Lesen des Screenshots.\n• Bitte trage die Daten manuell ein.`,
+                    link: "📷 Fehler"
                 });
             }
         }
@@ -119,7 +127,8 @@ Antworte NUR mit JSON (keine anderen Zeichen):
                 return res.status(200).json({
                     title: "Import fehlgeschlagen",
                     tags: "Info",
-                    notes: "• Die Plattform blockiert den automatischen Zugriff vollständig.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot!"
+                    notes: "• Die Plattform blockiert den automatischen Zugriff vollständig.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot!",
+                    link: url
                 });
             }
 
@@ -153,7 +162,8 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
                     return res.status(200).json({
                         title: pageTitle,
                         tags: "Video",
-                        notes: `• AI-Fehler: ${aiData.error.message || JSON.stringify(aiData.error)}\n• Versuche die 📷 Kamera-Funktion!`
+                        notes: `• AI-Fehler: ${aiData.error.message || JSON.stringify(aiData.error)}\n• Versuche die 📷 Kamera-Funktion!`,
+                        link: url
                     });
                 }
 
@@ -164,7 +174,10 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
                     try {
                         const jsonResult = JSON.parse(responseText);
                         console.log("✅ JSON erfolgreich geparst");
-                        return res.status(200).json(jsonResult);
+                        return res.status(200).json({
+                            ...jsonResult,
+                            link: jsonResult.link || url
+                        });
                     } catch (parseError) {
                         console.error("❌ JSON-Parse-Fehler, versuche Regex-Extraktion");
                         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -172,7 +185,10 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
                             try {
                                 const jsonResult = JSON.parse(jsonMatch[0]);
                                 console.log("✅ JSON via Regex gefunden");
-                                return res.status(200).json(jsonResult);
+                                return res.status(200).json({
+                                    ...jsonResult,
+                                    link: jsonResult.link || url
+                                });
                             } catch (e) {
                                 console.error("❌ Regex-JSON parse fehlgeschlagen");
                             }
@@ -181,7 +197,8 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
                         return res.status(200).json({
                             title: pageTitle,
                             tags: "Video",
-                            notes: responseText
+                            notes: responseText,
+                            link: url
                         });
                     }
                 } else {
@@ -194,7 +211,8 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
             return res.status(200).json({ 
                 title: pageTitle, 
                 tags: "Video", 
-                notes: "• Die Detailanalyse schlug fehl.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot der Infobox!" 
+                notes: "• Die Detailanalyse schlug fehl.\n• Bitte nutze die 📷 Kamera-Funktion für einen schnellen Screenshot der Infobox!",
+                link: url
             });
         }
 
@@ -205,7 +223,8 @@ Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
         return res.status(200).json({ 
             title: "Import-Hinweis", 
             tags: "Fehler", 
-            notes: `• Ein Fehler ist aufgetreten (${globalError.message}).` 
+            notes: `• Ein Fehler ist aufgetreten (${globalError.message}).`,
+            link: "error"
         });
     }
 }

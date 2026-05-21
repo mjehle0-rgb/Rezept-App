@@ -1,22 +1,20 @@
 // ==========================================
-// ZUSTANDSMANAGEMENT (APP STATE)
+// GLOBALE VARIABLEN & APP STATE
 // ==========================================
 let allRecipes = [];       // Speichert permanent alle Rezepte aus Supabase
 let activeFilterTag = null; // Merkt sich die aktuell gewählte Kategorie-Pill
 
-// Supabase-Konfiguration (Greift auf deine Frontend-Variablen zu)
+// Supabase-Konfiguration (Vite-Style)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// ==========================================
-// INITIALISIERUNG BEIM APP-START
-// ==========================================
+// App-Start
 document.addEventListener('DOMContentLoaded', () => {
     loadRecipesFromSupabase();
 });
 
 // ==========================================
-// DATEN AUS SUPABASE LADEN
+// 1. REZEPTE AUS SUPABASE LASSEN
 // ==========================================
 async function loadRecipesFromSupabase() {
     try {
@@ -33,27 +31,30 @@ async function loadRecipesFromSupabase() {
         
         allRecipes = await response.json();
         
-        // Rezeptliste und Filterleiste initial zeichnen
+        // UI rendern
         renderFilterBar();
         applyFilterAndSearch();
 
     } catch (error) {
         console.error('Datenbank-Fehler:', error);
-        document.getElementById('recipes-container').innerHTML = `
-            <div class="text-center py-8 text-red-500 font-medium">
-                Fehler beim Laden der Rezepte. Bitte Verbindung prüfen.
-            </div>`;
+        const container = document.getElementById('recipes-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-red-500 font-medium">
+                    Fehler beim Laden der Rezepte. Bitte Verbindung prüfen.
+                </div>`;
+        }
     }
 }
 
 // ==========================================
-// UX: FILTERBAR DYNAMISCH GENERIEREN
+// 2. FILTERBAR GENERIEREN (REPARIERT)
 // ==========================================
 function renderFilterBar() {
     const filterContainer = document.getElementById('filter-container');
     if (!filterContainer) return;
 
-    // 1. Alle einzigartigen Tags aus allen Rezepten herausfiltern
+    // Alle einzigartigen Tags sammeln
     const tagsSet = new Set();
     allRecipes.forEach(recipe => {
         if (Array.isArray(recipe.tags)) {
@@ -63,27 +64,25 @@ function renderFilterBar() {
         }
     });
     
-    // Sortieren für eine saubere Alphabet-Reihenfolge
     const sortedTags = Array.from(tagsSet).sort();
 
-    // 2. HTML für Buttons aufbauen - Startet mit dem "Alle"-Button
+    // HTML für Buttons aufbauen (Der Fehler am Zeilenende wurde entfernt!)
     let filterHtml = `
         <button onclick="setFilterTag(null)" class="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 snap-start shrink-0 cursor-pointer shadow-xs
             ${!activeFilterTag 
                 ? 'bg-amber-600 text-white shadow-sm scale-105 font-bold' 
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' Gold}'}">
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-200'}">
             Alle 🍽️
         </button>
     `;
 
-    // 3. Jedes Tag als eigenständige Pill anfügen
     sortedTags.forEach(tag => {
         const isActive = activeFilterTag === tag;
         filterHtml += `
             <button onclick="setFilterTag('${tag}')" class="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 snap-start shrink-0 cursor-pointer shadow-xs
                 ${isActive 
                     ? 'bg-amber-600 text-white shadow-sm scale-105 font-bold' 
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}">
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-200'}">
                 ${tag}
             </button>
         `;
@@ -93,38 +92,27 @@ function renderFilterBar() {
 }
 
 // ==========================================
-// FILTER-KLICK STEUERUNG
+// 3. EVENT-STEUERUNG FÜR FILTER & SUCHE
 // ==========================================
 window.setFilterTag = function(tag) {
-    // Wenn man auf das bereits aktive Tag klickt, wird der Filter zurückgesetzt
     activeFilterTag = (activeFilterTag === tag) ? null : tag;
-    
-    // Filterleiste neu einfärben & Rezepte filtern
     renderFilterBar();
     applyFilterAndSearch();
 };
 
-// Wird aufgerufen, wenn im Suchfeld getippt wird
 window.handleSearchOrFilterChange = function() {
     applyFilterAndSearch();
 };
 
-// ==========================================
-// DIE FILTER- ENGINE (Kombination aus Tag + Suche)
-// ==========================================
 function applyFilterAndSearch() {
     const searchInput = document.getElementById('search-input');
     const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
     const filteredRecipes = allRecipes.filter(recipe => {
-        // 1. Tag-Match prüfen
         const matchesTag = !activeFilterTag || (Array.isArray(recipe.tags) && recipe.tags.includes(activeFilterTag));
-        
-        // 2. Suchbegriff-Match prüfen (Titel, Notizen oder Tags)
         const matchesSearch = !searchQuery || 
             recipe.title.toLowerCase().includes(searchQuery) || 
-            (recipe.notes && recipe.notes.toLowerCase().includes(searchQuery)) ||
-            (Array.isArray(recipe.tags) && recipe.tags.some(t => t.toLowerCase().includes(searchInput)));
+            (recipe.notes && recipe.notes.toLowerCase().includes(searchQuery));
 
         return matchesTag && matchesSearch;
     });
@@ -133,7 +121,7 @@ function applyFilterAndSearch() {
 }
 
 // ==========================================
-// REZEPTE INS GRID ZEICHNEN
+// 4. REZEPTE INS GRID ZEICHNEN
 // ==========================================
 function renderRecipeGrid(recipesToRender) {
     const container = document.getElementById('recipes-container');
@@ -153,7 +141,6 @@ function renderRecipeGrid(recipesToRender) {
         const card = document.createElement('div');
         card.className = 'bg-white rounded-2xl shadow-xs border border-gray-100 p-4 relative hover:shadow-md transition-all duration-200';
         
-        // Generiere kleine Mini-Tags für die Unterseite der Karte
         let tagsHtml = '';
         if (Array.isArray(recipe.tags)) {
             recipe.tags.forEach(t => {
@@ -175,7 +162,7 @@ function renderRecipeGrid(recipesToRender) {
     });
 }
 
-// Dummy-Funktion für Neuanlage-Button im Header
+// Dummy-Definition für dein bestehendes Modal
 window.openRecipeModal = function() {
-    alert("Hier öffnet sich dein Erstellungs-Modal!");
+    alert("Modal wird geöffnet (Verknüpfe hier deine bestehende Modal-Funktion!)");
 };

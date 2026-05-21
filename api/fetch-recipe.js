@@ -1,6 +1,5 @@
 export default async function handler(req, res) {
     // SICHERHEIT: In Produktion solltest du ALLOWED_ORIGIN in Vercel auf deine Domain setzen 
-    // (z. B. https://meine-rezept-app.vercel.app). Lokal fällt es auf '*' zurück.
     const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
     res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,12 +29,11 @@ export default async function handler(req, res) {
             try {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
                 
-                // NEU: Klarere Struktur für natives JSON
                 const prompt = `Du bist ein präziser Rezept-Extraktor. Analysiere diesen Screenshot.
-                Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
-                - "title": Name des Gerichts ohne Emojis.
-                - "tags": 2-3 kurze Küchen-Kategorien (kommasepariert). Niemals Plattformnamen.
-                - "notes": Liste ALLE sichtbaren Zutaten und Mengen exakt ab, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.`;
+Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
+- "title": Name des Gerichts ohne Emojis.
+- "tags": 2-3 kurze Küchen-Kategorien (kommasepariert). Niemals Plattformnamen.
+- "notes": Liste ALLE sichtbaren Zutaten und Mengen exakt ab, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.`;
 
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
@@ -47,7 +45,6 @@ export default async function handler(req, res) {
                                 { inlineData: { mimeType: "image/jpeg", data: base64Data } }
                             ]
                         }],
-                        // NEU: Zwingt Gemini zur reinen JSON-Ausgabe
                         generationConfig: {
                             responseMimeType: "application/json"
                         }
@@ -56,13 +53,13 @@ export default async function handler(req, res) {
 
                 const aiData = await aiResponse.json();
                 
-                // NEU: Direktes Parsen ohne Regex-Workaround
                 if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
                     return res.status(200).json(jsonResult);
                 }
                 throw new Error("Leere KI-Antwort.");
             } catch (imgError) {
+                console.error("Screenshot-Fehler:", imgError);
                 return res.status(200).json({ 
                     title: "Bild-Analyse fehlgeschlagen", 
                     tags: "Kamera", 
@@ -109,6 +106,7 @@ export default async function handler(req, res) {
                 pageTitle = pageTitle.replace(/- YouTube.*/i, '').replace(/YouTube/i, '').trim();
                 
             } catch (fetchError) {
+                console.error("Fetch-Fehler beim URL-Abrufen:", fetchError);
                 metaDescription = "";
             }
 
@@ -120,49 +118,73 @@ export default async function handler(req, res) {
                 });
             }
 
-            // KORREKTUR: Sichere JSON-Konstruktion statt String-Interpolation im Prompt
-            const systemPrompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellten Daten einer Videoplattform.
+            // VEREINFACHTER PROMPT - zuverlässiger bei Gemini
+            const prompt = `Analysiere diese Rezept-Daten und extrahiere Zutaten:
 
-DEINE AUFGABE:
-1. Scanne die Beschreibung intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
-2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
-3. Formatiere alle gefundenen Zutaten ordentlich untereinander, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.
-4. ERFINDUNGS-VERBOT: Wenn absolut KEINE Zutaten erwähnt werden, setze den Wert für "notes" exakt auf diesen String: "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden."
+Titel: ${pageTitle}
+Beschreibung: ${metaDescription}
 
-Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
-- "title": Übernimm den Wert unter "Titel".
-- "tags": "Video, Rezept"
-- "notes": Deine formatierte Zutatenliste oder der Notfall-Text.`;
+Antworte NUR mit gültigem JSON (keine zusätzlicher Text):
+{
+  "title": "Exact title from above",
+  "tags": "Category1, Category2",
+  "notes": "• Ingredient 1\\n• Ingredient 2\\n• etc"
+}
 
-            const analysisData = `Titel: ${pageTitle}\n\nBeschreibung:\n${metaDescription}`;
+Wenn KEINE Zutaten vorhanden sind, schreib: "• Keine Zutaten in der Beschreibung gefunden"`;
 
             try {
+                console.log("🚀 Sende AI-Request mit URL:", url);
+                
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [
-                                { text: systemPrompt },
-                                { text: analysisData }
-                            ]
+                            parts: [{ text: prompt }]
                         }],
-                        // Zwingt Gemini zur reinen JSON-Ausgabe
                         generationConfig: {
                             responseMimeType: "application/json"
                         }
                     })
                 });
 
+                console.log("📨 AI-Response Status:", aiResponse.status);
                 const aiData = await aiResponse.json();
+                console.log("📥 AI-Daten erhalten:", JSON.stringify(aiData).substring(0, 200));
                 
-                // Direktes Parsen ohne Regex-Workaround
+                // DEBUGGING: Zeige die komplette Antwort
+                if (aiData.error) {
+                    console.error("❌ AI-Fehler:", aiData.error);
+                    return res.status(200).json({
+                        title: pageTitle,
+                        tags: "Video",
+                        notes: `• AI-Fehler: ${aiData.error.message || aiData.error}\n• Versuche die 📷 Kamera-Funktion!`
+                    });
+                }
+
                 if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
-                    return res.status(200).json(jsonResult);
+                    const responseText = aiData.candidates[0].content.parts[0].text;
+                    console.log("✅ AI-Text-Antwort:", responseText.substring(0, 200));
+                    
+                    try {
+                        const jsonResult = JSON.parse(responseText);
+                        return res.status(200).json(jsonResult);
+                    } catch (parseError) {
+                        console.error("❌ JSON-Parse-Fehler:", parseError, "Text war:", responseText);
+                        // Fallback: Extrahiere manuell
+                        return res.status(200).json({
+                            title: pageTitle,
+                            tags: "Video",
+                            notes: responseText
+                        });
+                    }
+                } else {
+                    console.error("❌ Keine Kandidaten in AI-Antwort:", aiData);
                 }
             } catch (aiError) {
-                console.error("AI Error bei Link-Import:", aiError);
+                console.error("❌ AI-Fehler (Netzwerk/Parsing):", aiError);
+                console.error("Stack:", aiError.stack);
             }
             
             return res.status(200).json({ 
@@ -175,6 +197,7 @@ Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
         return res.status(400).json({ error: 'Keine Daten geliefert' });
 
     } catch (globalError) {
+        console.error("❌ Globaler Fehler:", globalError);
         return res.status(200).json({ 
             title: "Import-Hinweis", 
             tags: "Fehler", 

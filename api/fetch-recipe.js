@@ -30,10 +30,8 @@ export default async function handler(req, res) {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
                 
                 const prompt = `Du bist ein präziser Rezept-Extraktor. Analysiere diesen Screenshot.
-Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
-- "title": Name des Gerichts ohne Emojis.
-- "tags": 2-3 kurze Küchen-Kategorien (kommasepariert). Niemals Plattformnamen.
-- "notes": Liste ALLE sichtbaren Zutaten und Mengen exakt ab, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.`;
+Antworte NUR mit JSON (keine anderen Zeichen):
+{"title":"Name des Gerichts","tags":"Kategorie1, Kategorie2","notes":"• Zutat1\\n• Zutat2"}`;
 
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
@@ -44,18 +42,25 @@ Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
                                 { text: prompt },
                                 { inlineData: { mimeType: "image/jpeg", data: base64Data } }
                             ]
-                        }],
-                        generationConfig: {
-                            response_mime_type: "application/json"
-                        }
+                        }]
                     })
                 });
 
                 const aiData = await aiResponse.json();
                 
                 if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
-                    return res.status(200).json(jsonResult);
+                    const responseText = aiData.candidates[0].content.parts[0].text;
+                    try {
+                        const jsonResult = JSON.parse(responseText);
+                        return res.status(200).json(jsonResult);
+                    } catch (e) {
+                        // Versuche JSON aus Text zu extrahieren
+                        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const jsonResult = JSON.parse(jsonMatch[0]);
+                            return res.status(200).json(jsonResult);
+                        }
+                    }
                 }
                 throw new Error("Leere KI-Antwort.");
             } catch (imgError) {
@@ -118,20 +123,13 @@ Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
                 });
             }
 
-            // VEREINFACHTER PROMPT - zuverlässiger bei Gemini
-            const prompt = `Analysiere diese Rezept-Daten und extrahiere Zutaten:
+            const prompt = `Analysiere diese Rezept-Daten:
 
 Titel: ${pageTitle}
 Beschreibung: ${metaDescription}
 
-Antworte NUR mit gültigem JSON (keine zusätzlicher Text):
-{
-  "title": "Exact title from above",
-  "tags": "Category1, Category2",
-  "notes": "• Ingredient 1\\n• Ingredient 2\\n• etc"
-}
-
-Wenn KEINE Zutaten vorhanden sind, schreib: "• Keine Zutaten in der Beschreibung gefunden"`;
+Antworte NUR mit JSON (keine anderen Zeichen, nur der JSON-Block):
+{"title":"${pageTitle}","tags":"Kategorie1, Kategorie2","notes":"• Zutat1\\n• Zutat2\\n• etc"}`;
 
             try {
                 console.log("🚀 Sende AI-Request mit URL:", url);
@@ -142,37 +140,44 @@ Wenn KEINE Zutaten vorhanden sind, schreib: "• Keine Zutaten in der Beschreibu
                     body: JSON.stringify({
                         contents: [{
                             parts: [{ text: prompt }]
-                        }],
-                        generationConfig: {
-                            response_mime_type: "application/json"
-                        }
+                        }]
                     })
                 });
 
                 console.log("📨 AI-Response Status:", aiResponse.status);
                 const aiData = await aiResponse.json();
-                console.log("📥 AI-Daten erhalten:", JSON.stringify(aiData).substring(0, 200));
+                console.log("📥 AI-Daten erhalten:", JSON.stringify(aiData).substring(0, 300));
                 
-                // DEBUGGING: Zeige die komplette Antwort
                 if (aiData.error) {
                     console.error("❌ AI-Fehler:", aiData.error);
                     return res.status(200).json({
                         title: pageTitle,
                         tags: "Video",
-                        notes: `• AI-Fehler: ${aiData.error.message || aiData.error}\n• Versuche die 📷 Kamera-Funktion!`
+                        notes: `• AI-Fehler: ${aiData.error.message || JSON.stringify(aiData.error)}\n• Versuche die 📷 Kamera-Funktion!`
                     });
                 }
 
                 if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const responseText = aiData.candidates[0].content.parts[0].text;
-                    console.log("✅ AI-Text-Antwort:", responseText.substring(0, 200));
+                    console.log("✅ AI-Text-Antwort:", responseText.substring(0, 300));
                     
                     try {
                         const jsonResult = JSON.parse(responseText);
+                        console.log("✅ JSON erfolgreich geparst");
                         return res.status(200).json(jsonResult);
                     } catch (parseError) {
-                        console.error("❌ JSON-Parse-Fehler:", parseError, "Text war:", responseText);
-                        // Fallback: Extrahiere manuell
+                        console.error("❌ JSON-Parse-Fehler, versuche Regex-Extraktion");
+                        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            try {
+                                const jsonResult = JSON.parse(jsonMatch[0]);
+                                console.log("✅ JSON via Regex gefunden");
+                                return res.status(200).json(jsonResult);
+                            } catch (e) {
+                                console.error("❌ Regex-JSON parse fehlgeschlagen");
+                            }
+                        }
+                        // Fallback
                         return res.status(200).json({
                             title: pageTitle,
                             tags: "Video",
@@ -180,11 +185,10 @@ Wenn KEINE Zutaten vorhanden sind, schreib: "• Keine Zutaten in der Beschreibu
                         });
                     }
                 } else {
-                    console.error("❌ Keine Kandidaten in AI-Antwort:", aiData);
+                    console.error("❌ Keine Kandidaten in AI-Antwort");
                 }
             } catch (aiError) {
                 console.error("❌ AI-Fehler (Netzwerk/Parsing):", aiError);
-                console.error("Stack:", aiError.stack);
             }
             
             return res.status(200).json({ 

@@ -6,7 +6,7 @@
     <title>Rezept App</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        /* Modernes UX Styling für die Filterleiste */
+        /* Modernes UX-Styling für den nativen Mobile-Swipe-Effekt */
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
         .ios-momentum { -webkit-overflow-scrolling: touch; }
@@ -17,7 +17,7 @@
 
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 flex justify-between items-center">
         <h1 class="text-xl font-bold text-gray-800 tracking-tight">Rezept App 👨‍🍳</h1>
-        <button onclick="openRecipeModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-1">
+        <button onclick="openModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-1">
             <span>+ Neu</span>
         </button>
     </header>
@@ -26,7 +26,7 @@
         
         <div class="px-4 mb-2">
             <div class="relative">
-                <input type="text" id="search-input" oninput="handleSearchOrFilterChange()" placeholder="Rezepte, Zutaten oder Notizen suchen..." 
+                <input type="text" id="search-input" placeholder="Rezepte, Zutaten oder Notizen suchen..." 
                        class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-xs">
                 <div class="absolute left-3 top-3.5 text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -39,12 +39,10 @@
 
         <div class="px-4 mt-2">
             <div id="recipes-container" class="grid grid-cols-1 gap-4">
-                <div class="text-center py-12 text-gray-400">Rezepte werden geladen...</div>
+                <div class="text-center py-12 text-gray-400 text-sm">Rezepte werden geladen...</div>
             </div>
         </div>
 
     </main>
 
-    <script src="/src/app.js" type="module"></script>
-</body>
-</html>
+    

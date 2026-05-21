@@ -120,32 +120,34 @@ export default async function handler(req, res) {
                 });
             }
 
-            // NEU: Dynamische String-Interpolation entfernt, Daten werden als reiner Kontext übergeben.
-            const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellten Daten einer Videoplattform.
-            
-            DEINE AUFGABE:
-            1. Scanne die Beschreibung intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
-            2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
-            3. Formatiere alle gefundenen Zutaten ordentlich untereinander, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.
-            4. ERFINDUNGS-VERBOT: Wenn absolut KEINE Zutaten erwähnt werden, setze den Wert für "notes" exakt auf diesen String: "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden.\\n• Bitte öffne das Video, klappe die Infobox auf und mache einen 📷 Screenshot für den Foto-Upload!"
+            // KORREKTUR: Sichere JSON-Konstruktion statt String-Interpolation im Prompt
+            const systemPrompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellten Daten einer Videoplattform.
 
-            Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
-            - "title": Übernimm den Wert unter "Titel".
-            - "tags": "Video, Rezept"
-            - "notes": Deine formatierte Zutatenliste oder der Notfall-Text.
+DEINE AUFGABE:
+1. Scanne die Beschreibung intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
+2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
+3. Formatiere alle gefundenen Zutaten ordentlich untereinander, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.
+4. ERFINDUNGS-VERBOT: Wenn absolut KEINE Zutaten erwähnt werden, setze den Wert für "notes" exakt auf diesen String: "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden."
 
-            DATEN ZUR ANALYSE:
-            Titel: ${pageTitle}
-            Beschreibung: 
-            ${metaDescription}`;
+Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
+- "title": Übernimm den Wert unter "Titel".
+- "tags": "Video, Rezept"
+- "notes": Deine formatierte Zutatenliste oder der Notfall-Text.`;
+
+            const analysisData = `Titel: ${pageTitle}\n\nBeschreibung:\n${metaDescription}`;
 
             try {
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        // NEU: Zwingt Gemini zur reinen JSON-Ausgabe
+                        contents: [{
+                            parts: [
+                                { text: systemPrompt },
+                                { text: analysisData }
+                            ]
+                        }],
+                        // Zwingt Gemini zur reinen JSON-Ausgabe
                         generationConfig: {
                             responseMimeType: "application/json"
                         }
@@ -154,13 +156,13 @@ export default async function handler(req, res) {
 
                 const aiData = await aiResponse.json();
                 
-                // NEU: Direktes Parsen ohne Regex-Workaround
+                // Direktes Parsen ohne Regex-Workaround
                 if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
                     return res.status(200).json(jsonResult);
                 }
             } catch (aiError) {
-                // Stiller Fallback
+                console.error("AI Error bei Link-Import:", aiError);
             }
             
             return res.status(200).json({ 

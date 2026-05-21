@@ -43,7 +43,7 @@
 </head>
 <body class="bg-[#FBFBFA] min-h-screen text-gray-800 antialiased overflow-x-hidden">
 
-    <button id="mobileAddBtn" class="lg:hidden fixed bottom-8 right-6 z-[60] bg-gray-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform active:scale-95">
+    <button id="mobileAddBtn" class="lg:hidden fixed bottom-8 right-6 z-[60] bg-gray-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform[...]
         <span id="btnIcon">＋</span>
     </button>
 
@@ -80,13 +80,13 @@
                         <form id="recipeForm" class="space-y-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren oder Screenshot hochladen</label>
-                                <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
+                                <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber[...]
                                     <input type="url" id="recipeLink" placeholder="Instagram, Blog, Chefkoch..." class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none min-w-0">
                                     <label class="flex items-center justify-center p-2 text-gray-400 hover:text-amber-600 cursor-pointer transition-colors text-lg shrink-0 select-none">
                                         📷
                                         <input type="file" id="imageUpload" accept="image/*" class="hidden">
                                     </label>
-                                    <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs shrink-0 tracking-wider">
+                                    <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-cente[...]
                                         🪄 MAGIC
                                     </button>
                                 </div>
@@ -97,22 +97,22 @@
                             <div class="grid grid-cols-1 gap-5">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gericht Name</label>
-                                    <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                    <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm [...]
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategorien</label>
-                                    <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                    <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:out[...]
                                 </div>
                             </div>
 
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
-                                <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
+                                <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-s[...]
                             </div>
 
                             <div class="flex gap-3">
-                                <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs tracking-widest uppercase">Leeren</button>
-                                <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-xs tracking-widest uppercase">Studio Speichern</button>
+                                <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs trac[...]
+                                <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.[...]
                             </div>
                         </form>
                     </div>
@@ -242,7 +242,7 @@
                 cachedRecipes.forEach(recipe => {
                     const tags = Array.isArray(recipe.tags) ? recipe.tags : (recipe.tags ? recipe.tags.split(',') : []);
                     const card = document.createElement('div');
-                    card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration-500 group";
+                    card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration[...]
                     
                     const tagsHTML = tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('');
 
@@ -254,7 +254,7 @@
                         </div>
                         <div class="mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
                             <div class="flex gap-4">
-                                ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
+                                ${recipe.link && !recipe.link.includes('📷') ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
                                 <button onclick="startEditing(${recipe.id})" class="text-amber-600 hover:text-amber-700 font-bold transition-colors cursor-pointer">Editieren</button>
                             </div>
                             <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
@@ -267,7 +267,7 @@
                 console.error(e);
                 
                 if (e.name === 'AbortError') {
-                    displayCriticalError("Netzwerk-Timeout (6s überschritten)", "Die API-Route '/api/get-recipes' hat nicht rechtzeitig reagiert.\n\nMögliche Ursache:\n- Supabase-Verbindung schläft (Cold Start)\n- Serverless-Dienst blockiert.");
+                    displayCriticalError("Netzwerk-Timeout (6s überschritten)", "Die API-Route '/api/get-recipes' hat nicht rechtzeitig reagiert.\n\nMögliche Ursache:\n- Supabase-Verbindung sch[...]
                 } else {
                     displayCriticalError("Fehler beim Laden der Rezepte", e.message);
                 }
@@ -318,6 +318,8 @@
                     if (data.title) recipeTitle.value = data.title;
                     if (data.tags) recipeTags.value = data.tags;
                     if (data.notes) recipeNotes.value = data.notes;
+                    // Setze den Link auf den Platzhalter von der API
+                    if (data.link) recipeLink.value = data.link;
 
                     if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
                         toggleForm();
@@ -369,7 +371,7 @@
             e.preventDefault();
             const payload = {
                 title: recipeTitle.value.trim(),
-                link: recipeLink.value.trim(),
+                link: recipeLink.value.trim() || "📷 Foto-Analyse", // WICHTIG: Fallback auf Platzhalter
                 tags: recipeTags.value.trim(),
                 notes: recipeNotes.value.trim()
             };

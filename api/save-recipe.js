@@ -15,22 +15,28 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Ein Titel wird zwingend benötigt.' });
         }
 
-        // BINGO: Hier ist process.env.SUPABASE_KEY jetzt integriert!
         const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-            return res.status(500).json({ 
-                error: 'Datenbank-Verbindung fehlgeschlagen. Umgebungsvariablen prüfen!' 
-            });
+            return res.status(500).json({ error: 'Datenbank-Verbindung fehlgeschlagen.' });
+        }
+
+        // ==========================================
+        // FORMAT-FIX: Tags immer als sauberes Array für Supabase aufbereiten
+        // ==========================================
+        let formattedTags = [];
+        if (Array.isArray(tags)) {
+            formattedTags = tags; // Es ist bereits ein Array (z.B. ["Video", "Fleisch"])
+        } else if (typeof tags === 'string' && tags.trim() !== '') {
+            // Es ist ein Text (z.B. "Video" oder "Video, Fleisch"). Wir machen ein Array draus.
+            formattedTags = tags.split(',').map(t => t.trim());
         }
 
         let supabaseResponse;
 
         if (id) {
-            // ==========================================
             // FALL 1: EDITIEREN (Bestehendes Rezept aktualisieren)
-            // ==========================================
             supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${id}`, {
                 method: 'PATCH',
                 headers: {
@@ -42,14 +48,12 @@ export default async function handler(req, res) {
                 body: JSON.stringify({ 
                     title, 
                     link: link || null, 
-                    tags: tags || '', 
-                    notes: notes || '' 
+                    tags: formattedTags, 
+                    notes: notes || null 
                 })
             });
         } else {
-            // ==========================================
             // FALL 2: NEUANLAGE (Frisches Rezept einspeisen)
-            // ==========================================
             supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/recipes`, {
                 method: 'POST',
                 headers: {
@@ -61,8 +65,8 @@ export default async function handler(req, res) {
                 body: JSON.stringify([{ 
                     title, 
                     link: link || null, 
-                    tags: tags || '', 
-                    notes: notes || '' 
+                    tags: formattedTags, 
+                    notes: notes || null 
                 }])
             });
         }

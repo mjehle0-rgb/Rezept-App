@@ -3,46 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rezept App</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GourmetBox">
+    <meta name="theme-color" content="#FBFBFA">
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
+    
+    <title>GourmetBox – Culinary Studio</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&family=Playfair+Display:ital,wght=0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
     <style>
-        /* Modernes UX-Styling für den nativen Mobile-Swipe-Effekt */
-        .scrollbar-none::-webkit-scrollbar { display: none; }
-        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-        .ios-momentum { -webkit-overflow-scrolling: touch; }
-        body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        
+        @media (max-width: 1023px) {
+            #formContainer {
+                position: fixed;
+                inset: 0;
+                z-index: 50;
+                transform: translateY(100%);
+                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            #formContainer.open {
+                transform: translateY(0);
+            }
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="text-gray-900 antialiased pb-12">
+<body class="bg-[#FBFBFA] min-h-screen text-gray-800 antialiased overflow-x-hidden">
 
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800 tracking-tight">Rezept App 👨‍🍳</h1>
-        <button onclick="openModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-1">
-            <span>+ Neu</span>
-        </button>
-    </header>
+    <button id="mobileAddBtn" class="lg:hidden fixed bottom-8 right-6 z-[60] bg-gray-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition-transform active:scale-95">
+        <span id="btnIcon">＋</span>
+    </button>
 
-    <main class="max-w-md mx-auto pt-4">
+    <div class="max-w-6xl mx-auto px-4 py-8 lg:py-12 flex flex-col min-h-screen justify-between">
         
-        <div class="px-4 mb-2">
-            <div class="relative">
-                <input type="text" id="search-input" placeholder="Rezepte, Zutaten oder Notizen suchen..." 
-                       class="w-full bg-white border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-xs">
-                <div class="absolute left-3 top-3.5 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <div>
+            <header class="flex justify-between items-center mb-10 lg:mb-16">
+                <div>
+                    <h1 class="text-3xl lg:text-4xl font-bold font-serif text-gray-900 tracking-tight">
+                        GourmetBox <span class="text-lg italic text-amber-600 font-normal ml-1">Studio</span>
+                    </h1>
+                    <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-1 font-semibold">Digital Recipe Collection</p>
                 </div>
+                <div class="hidden sm:flex bg-white border border-gray-100 shadow-sm px-3 py-1.5 rounded-full items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sync Active</span>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                
+                <div id="formContainer" class="lg:col-span-5 bg-[#FBFBFA] lg:bg-transparent overflow-y-auto no-scrollbar lg:overflow-visible">
+                    <div class="h-full lg:h-auto bg-white p-6 lg:p-8 rounded-t-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-sm border-t lg:border border-gray-100 relative">
+                        
+                        <div class="lg:hidden flex justify-center mb-6">
+                            <div class="w-12 h-1.5 bg-gray-200 rounded-full"></div>
+                        </div>
+
+                        <div class="mb-8 flex justify-between items-center">
+                            <h2 id="formHeader" class="text-xl font-bold font-serif text-gray-900 italic">Neues Rezept kreieren</h2>
+                            <button id="closeFormBtn" class="lg:hidden text-gray-400 text-sm font-bold uppercase tracking-widest">Schließen</button>
+                        </div>
+
+                        <form id="recipeForm" class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link importieren oder Screenshot hochladen</label>
+                                <div class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-100 rounded-2xl focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
+                                    <input type="url" id="recipeLink" placeholder="Instagram, Blog, Chefkoch..." class="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none min-w-0">
+                                    <label class="flex items-center justify-center p-2 text-gray-400 hover:text-amber-600 cursor-pointer transition-colors text-lg shrink-0 select-none">
+                                        📷
+                                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                                    </label>
+                                    <button type="button" id="magicBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center cursor-pointer text-xs shrink-0 tracking-wider">
+                                        🪄 MAGIC
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-100">
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gericht Name</label>
+                                    <input type="text" id="recipeTitle" required placeholder="z.B. Trüffel-Pasta" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategorien</label>
+                                    <input type="text" id="recipeTags" placeholder="Pasta, Dinner, 15min" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
+                                <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="button" id="resetBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-4 rounded-2xl transition-all cursor-pointer text-xs tracking-widest uppercase">Leeren</button>
+                                <button type="submit" id="submitBtn" class="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-xs tracking-widest uppercase">Studio Speichern</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7">
+                    <div class="flex items-baseline justify-between mb-8">
+                        <h2 class="text-2xl font-bold font-serif text-gray-900 italic">Sammlung</h2>
+                        <span id="recipeCount" class="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase">Bereit</span>
+                    </div>
+                    
+                    <div id="recipeList" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        </div>
+                </div>
+
             </div>
         </div>
 
-        <div id="filter-container" class="flex overflow-x-auto py-2 px-4 gap-2 scrollbar-none snap-x ios-momentum sticky top-[69px] bg-[#f9fafb] z-30">
-            </div>
+        <footer class="mt-20 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 text-gray-400 text-xs">
+            <p>&copy; 2026 GourmetBox Studio. Alle Rechte vorbehalten.</p>
+            <p class="font-medium tracking-[0.2em] uppercase text-[9px]">
+                Handcrafted with 🤍 by <span class="text-gray-900 font-bold hover:text-amber-600 transition-colors duration-300 select-all">MJ DEV</span>
+            </p>
+        </footer>
 
-        <div class="px-4 mt-2">
-            <div id="recipes-container" class="grid grid-cols-1 gap-4">
-                <div class="text-center py-12 text-gray-400 text-sm">Rezepte werden geladen...</div>
-            </div>
-        </div>
+    </div>
 
-    </main>
+    <script>
+        // Visuelle Fehlerbox rendern
+        function displayCriticalError(title, details) {
+            const list = document.getElementById('recipeList');
+            const count = document.getElementById('recipeCount');
+            if (count) count.textContent = "Fehler";
+            if (list) {
+                list.innerHTML = `
+                    <div class="col-span-full bg-red-50 border border-red-200 p-6 rounded-3xl text-sm text-red-800 shadow-sm animate-fade-in">
+                        <strong class="block font-serif text-lg mb-2">🔴 ${title}</strong>
+                        <p class="mb-3 text-red-700">Die App konnte die Anfrage nicht beenden. Das System schützt sich jetzt vor unendlichem Hängen.</p>
+                        <p class="font-mono text-xs bg-white/60 p-3 rounded-xl border border-red-100 whitespace-pre-wrap">${details}</p>
+                    </div>`;
+            }
+        }
 
-    
+        // 1. Standard-Synchronfehler abfangen
+        window.onerror = function(msg, url, line) {
+            displayCriticalError("Kritischer Skript-Fehler", `${msg}\n\nZeile: ${line}`);
+            return false;
+        };
+
+        // 2. Unbehandelte Async/Promise-Fehler abfangen (wichtig für hängende API-Calls!)
+        window.addEventListener('unhandledrejection', function(event) {
+            displayCriticalError("Unbehandelter Async-Fehler", event.reason?.message || event.reason || "Ein asynchroner Promise-Call ist fehlgeschlagen.");
+        });
+
+        const formContainer = document.getElementById('formContainer');
+        const mobileAddBtn = document.getElementById('mobileAddBtn');
+        const closeFormBtn = document.getElementById('closeFormBtn');
+        const btnIcon = document.getElementById('btnIcon');
+        const recipeForm = document.getElementById('recipeForm');
+        const recipeList = document.getElementById('recipeList');
+        const recipeCount = document.getElementById('recipeCount');
+        
+        const formHeader = document.getElementById('formHeader');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const magicBtn = document.getElementById('magicBtn');
+        const recipeLink = document.getElementById('recipeLink');
+        const recipeTitle = document.getElementById('recipeTitle');
+        const recipeTags = document.getElementById('recipeTags');
+        const recipeNotes = document.getElementById('recipeNotes');
+        const imageUpload = document.getElementById('imageUpload');
+
+        let cachedRecipes = [];
+        let editingRecipeId = null;
+
+        function toggleForm() {
+            const isOpen = formContainer.classList.toggle('open');
+            btnIcon.textContent = isOpen ? '✕' : '＋';
+            mobileAddBtn.classList.toggle('bg-red-500', isOpen);
+            mobileAddBtn.classList.toggle('bg-gray-900', !isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+        }
+
+        mobileAddBtn.addEventListener('click', toggleForm);
+        closeFormBtn.addEventListener('click', toggleForm);
+
+        function resetStudioForm() {
+            recipeForm.reset();
+            editingRecipeId = null;
+            formHeader.textContent = "Neues Rezept kreieren";
+            submitBtn.textContent = "Studio Speichern";
+            submitBtn.classList.remove('bg-amber-600');
+            submitBtn.classList.add('bg-gray-900');
+        }
+        resetBtn.addEventListener('click', resetStudioForm);
+
+        // Ultramoderne, über AbortController zeitüberwachte Ladefunktion
+        async function loadRecipes() {
+            // Erstelle einen internen Wecker (6 Sekunden bis zum harten Abbruch)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000); 
+            
+            try {
+                recipeList.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400 italic flex items-center justify-center gap-2">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> 
+                    Sammlung wird geladen (Timeout-Schutz aktiv)...
+                </div>`;
+                
+                // Signal an Fetch übergeben
+                const response = await fetch('/api/get-recipes', { signal: controller.signal });
+                clearTimeout(timeoutId); // API hat rechtzeitig geantwortet, Wecker löschen!
+
+                if (!response.ok) throw new Error(`HTTP-Status ${response.status} beim Abrufen der API.`);
+
+                const data = await response.json();
+                if (!Array.isArray(data)) throw new Error(data.error || "Die API hat kein gültiges Array geliefert.");
+
+                cachedRecipes = data;
+                recipeList.innerHTML = "";
+                recipeCount.textContent = `${cachedRecipes.length} Rezepte`;
+
+                if (cachedRecipes.length === 0) {
+                    recipeList.innerHTML = `<div class='col-span-full py-20 text-center'><p class='font-serif italic text-gray-400'>Noch keine Schätze gespeichert.</p></div>`;
+                    return;
+                }
+
+                cachedRecipes.forEach(recipe => {
+                    const tags = Array.isArray(recipe.tags) ? recipe.tags : (recipe.tags ? recipe.tags.split(',') : []);
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration-500 group";
+                    
+                    const tagsHTML = tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('');
+
+                    card.innerHTML = `
+                        <div>
+                            <h3 class="font-bold font-serif text-gray-900 text-xl leading-tight group-hover:text-amber-600 transition-colors">${recipe.title}</h3>
+                            <div class="flex flex-wrap gap-2 mt-3">${tagsHTML}</div>
+                            <p class="text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3 whitespace-pre-line">${recipe.notes || ''}</p>
+                        </div>
+                        <div class="mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+                            <div class="flex gap-4">
+                                ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : ''}
+                                <button onclick="startEditing(${recipe.id})" class="text-amber-600 hover:text-amber-700 font-bold transition-colors cursor-pointer">Editieren</button>
+                            </div>
+                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
+                        </div>
+                    `;
+                    recipeList.appendChild(card);
+                });
+            } catch (e) { 
+                clearTimeout(timeoutId); // Sicherheitshalber auch im Fehlerfall stoppen
+                console.error(e);
+                
+                if (e.name === 'AbortError') {
+                    displayCriticalError("Netzwerk-Timeout (6s überschritten)", "Die API-Route '/api/get-recipes' hat nicht rechtzeitig reagiert.\n\nMögliche Ursache:\n- Supabase-Verbindung schläft (Cold Start)\n- Serverless-Dienst blockiert.");
+                } else {
+                    displayCriticalError("Fehler beim Laden der Rezepte", e.message);
+                }
+            }
+        }
+
+        window.startEditing = function(id) {
+            const recipe = cachedRecipes.find(r => r.id === id);
+            if (!recipe) return;
+
+            editingRecipeId = id;
+            recipeTitle.value = recipe.title || '';
+            recipeLink.value = recipe.link || '';
+            recipeTags.value = recipe.tags || '';
+            recipeNotes.value = recipe.notes || '';
+
+            formHeader.textContent = "Rezept verfeinern";
+            submitBtn.textContent = "Änderungen Sichern";
+            submitBtn.classList.remove('bg-gray-900');
+            submitBtn.classList.add('bg-amber-600');
+
+            if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                toggleForm();
+            } else {
+                formContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Analyse des Screenshots läuft über Gemini Vision...";
+
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Image = reader.result;
+                try {
+                    const response = await fetch('/api/fetch-recipe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.title) recipeTitle.value = data.title;
+                    if (data.tags) recipeTags.value = data.tags;
+                    if (data.notes) recipeNotes.value = data.notes;
+
+                    if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                        toggleForm();
+                    }
+                } catch (error) {
+                    recipeNotes.value = "Fehler bei der Bildanalyse.";
+                } finally {
+                    magicBtn.textContent = "🪄 MAGIC";
+                    magicBtn.disabled = false;
+                    imageUpload.value = ""; 
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        magicBtn.addEventListener('click', async () => {
+            const link = recipeLink.value.trim();
+            if (!link) return alert('Bitte zuerst einen Link einfügen!');
+            
+            magicBtn.textContent = "⏳";
+            magicBtn.disabled = true;
+            recipeNotes.value = "Webseite wird im Hintergrund ausgelesen...";
+            
+            try {
+                const response = await fetch('/api/fetch-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: link })
+                });
+                
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                
+                const data = await response.json();
+                if (data.title) recipeTitle.value = data.title;
+                if (data.tags) recipeTags.value = data.tags;
+                if (data.notes) recipeNotes.value = data.notes;
+            } catch (e) { 
+                recipeNotes.value = `• Import abgebrochen (${e.message}).\n• Nutze die 📷 Kamera-Funktion für einen Screenshot!`;
+                if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                    toggleForm();
+                }
+            } finally {
+                magicBtn.textContent = "🪄 MAGIC";
+                magicBtn.disabled = false;
+            }
+        });
+
+        recipeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: recipeTitle.value.trim(),
+                link: recipeLink.value.trim(),
+                tags: recipeTags.value.trim(),
+                notes: recipeNotes.value.trim()
+            };
+            
+            if (editingRecipeId) {
+                payload.id = editingRecipeId;
+            }
+            
+            try {
+                const response = await fetch('/api/save-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    resetStudioForm();
+                    if (window.innerWidth < 1024) toggleForm();
+                    loadRecipes();
+                } else {
+                    const errData = await response.json();
+                    alert(`Fehler beim Speichern: ${errData.error || 'Unbekannt'}`);
+                }
+            } catch (e) { console.error(e); }
+        });
+
+        window.deleteRecipe = async function(id) {
+            if (!confirm("Rezept löschen?")) return;
+            try {
+                await fetch('/api/get-recipes', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (editingRecipeId === id) resetStudioForm();
+                loadRecipes();
+            } catch(e) { console.error(e); }
+        };
+
+        // Initialer Start beim Laden
+        loadRecipes();
+    </script>
+</body>
+</html>

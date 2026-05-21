@@ -1,5 +1,8 @@
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // SICHERHEIT: In Produktion solltest du ALLOWED_ORIGIN in Vercel auf deine Domain setzen 
+    // (z. B. https://meine-rezept-app.vercel.app). Lokal fällt es auf '*' zurück.
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -26,12 +29,13 @@ export default async function handler(req, res) {
         if (image) {
             try {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+                
+                // NEU: Klarere Struktur für natives JSON
                 const prompt = `Du bist ein präziser Rezept-Extraktor. Analysiere diesen Screenshot.
-                1. "title": Name des Gerichts ohne Emojis.
-                2. "tags": 2-3 kurze Küchen-Kategorien. Niemals Plattformnamen.
-                3. "notes": Liste ALLE sichtbaren Zutaten und Mengen exakt ab mit "• ".
-                Antworte nur als reines JSON-Objekt ohne Markdown.
-                Format: {"title": "Name", "tags": "Tag1, Tag2", "notes": "• Zutat 1\\n• Zutat 2"}`;
+                Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
+                - "title": Name des Gerichts ohne Emojis.
+                - "tags": 2-3 kurze Küchen-Kategorien (kommasepariert). Niemals Plattformnamen.
+                - "notes": Liste ALLE sichtbaren Zutaten und Mengen exakt ab, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.`;
 
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
@@ -42,17 +46,22 @@ export default async function handler(req, res) {
                                 { text: prompt },
                                 { inlineData: { mimeType: "image/jpeg", data: base64Data } }
                             ]
-                        }]
+                        }],
+                        // NEU: Zwingt Gemini zur reinen JSON-Ausgabe
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
                     })
                 });
 
                 const aiData = await aiResponse.json();
-                if (aiData.candidates && aiData.candidates[0]?.content?.parts[0]?.text) {
-                    const rawText = aiData.candidates[0].content.parts[0].text.trim();
-                    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) return res.status(200).json(JSON.parse(jsonMatch[0]));
+                
+                // NEU: Direktes Parsen ohne Regex-Workaround
+                if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
+                    return res.status(200).json(jsonResult);
                 }
-                throw new Error("Gefundenes Format ungültig.");
+                throw new Error("Leere KI-Antwort.");
             } catch (imgError) {
                 return res.status(200).json({ 
                     title: "Bild-Analyse fehlgeschlagen", 
@@ -78,7 +87,6 @@ export default async function handler(req, res) {
                 });
                 const htmlText = await response.text();
                 
-                // 1. BESCHREIBUNG ISOLIEREN
                 const descMatch = htmlText.match(/property="og:description"\s+content="([^"]+)"/i) || 
                                   htmlText.match(/name="description"\s+content="([^"]+)"/i) ||
                                   htmlText.match(/"shortDescription":"([^"]+)"/i);
@@ -90,13 +98,11 @@ export default async function handler(req, res) {
                         .substring(0, 4000); 
                 }
 
-                // 2. TITEL ISOLIEREN (Sichere Methode, die das Copy-Paste nicht kaputt macht)
                 const titleMatch = htmlText.match(/property="og:title"\s+content="([^"]+)"/i);
                 
                 if (titleMatch && titleMatch[1]) {
                     pageTitle = titleMatch[1];
                 } else if (htmlText.indexOf("<title>") !== -1) {
-                    // Simpler Split statt Regex verhindert den Kopier-Bug
                     pageTitle = htmlText.split("<title>")[1].split("</")[0]; 
                 }
 
@@ -106,7 +112,6 @@ export default async function handler(req, res) {
                 metaDescription = "";
             }
 
-            // Falls absolut gar nichts geholt werden konnte
             if (!metaDescription && pageTitle === "Neues Rezept") {
                 return res.status(200).json({
                     title: "Import fehlgeschlagen",
@@ -115,36 +120,44 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Der Detektiv-Prompt
-            const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellte Beschreibung einer Videoplattform.
+            // NEU: Dynamische String-Interpolation entfernt, Daten werden als reiner Kontext übergeben.
+            const prompt = `Du bist ein brillanter Rezept-Detektiv. Analysiere die bereitgestellten Daten einer Videoplattform.
             
             DEINE AUFGABE:
-            1. Scanne die Video Caption intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
+            1. Scanne die Beschreibung intensiv nach Zutaten. Oft stehen sie unstrukturiert im Fließtext oder nutzen Abkürzungen wie "EL", "TL", "g", "Handvoll".
             2. Nimm auch ungenaue Mengen ("etwas Salz", "Schuss Sojasauce") absolut kulant in die Liste auf!
-            3. Formatiere alle gefundenen Zutaten ordentlich untereinander mit "• ".
-            4. ERFINDUNGS-VERBOT: Wenn im Text absolut KEINE Zutaten oder Lebensmittel erwähnt werden, nutze exakt den NOTFALL-TEXT.
+            3. Formatiere alle gefundenen Zutaten ordentlich untereinander, beginnend mit "• ". Nutze \\n für Zeilenumbrüche.
+            4. ERFINDUNGS-VERBOT: Wenn absolut KEINE Zutaten erwähnt werden, setze den Wert für "notes" exakt auf diesen String: "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden.\\n• Bitte öffne das Video, klappe die Infobox auf und mache einen 📷 Screenshot für den Foto-Upload!"
 
-            NOTFALL-TEXT:
-            "• Im Beschreibungstext des Videos wurden keine Zutaten gefunden.\\n• Bitte öffne das Video, klappe die Infobox auf und mache einen 📷 Screenshot für den Foto-Upload!"
+            Erstelle ein JSON-Objekt mit exakt diesen drei Schlüsseln:
+            - "title": Übernimm den Wert unter "Titel".
+            - "tags": "Video, Rezept"
+            - "notes": Deine formatierte Zutatenliste oder der Notfall-Text.
 
-            Antworte im exakten JSON-Format ohne Markdown-Wrapper:
-            {"title": "${pageTitle.replace(/"/g, '\\"')}", "tags": "Video, Rezept", "notes": "• Zutatenliste folgt"}`;
+            DATEN ZUR ANALYSE:
+            Titel: ${pageTitle}
+            Beschreibung: 
+            ${metaDescription}`;
 
             try {
                 const aiResponse = await fetch(geminiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt + `\n\nDATEN ZUR ANALYSE:\nTitel: ${pageTitle}\nBeschreibung:\n${metaDescription}` }] }]
+                        contents: [{ parts: [{ text: prompt }] }],
+                        // NEU: Zwingt Gemini zur reinen JSON-Ausgabe
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
                     })
                 });
 
                 const aiData = await aiResponse.json();
                 
-                if (aiData.candidates && aiData.candidates[0]?.content?.parts[0]?.text) {
-                    const rawText = aiData.candidates[0].content.parts[0].text.trim();
-                    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) return res.status(200).json(JSON.parse(jsonMatch[0]));
+                // NEU: Direktes Parsen ohne Regex-Workaround
+                if (aiData.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const jsonResult = JSON.parse(aiData.candidates[0].content.parts[0].text);
+                    return res.status(200).json(jsonResult);
                 }
             } catch (aiError) {
                 // Stiller Fallback

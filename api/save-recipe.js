@@ -15,18 +15,13 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Ein Titel wird zwingend benötigt.' });
         }
 
-        // Unterstützt jetzt alle gängigen Framework-Präfixe (Plain, Next.js und Vite)
+        // BINGO: Hier ist process.env.SUPABASE_KEY jetzt integriert!
         const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+        const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-            // DETEKTIV-MODUS: Wir listen die reinen Namen der Keys auf, um zu sehen, was Vercel bereitstellt
-            const gefundeneKeys = Object.keys(process.env).filter(k => 
-                k.includes('SUPABASE') || k.includes('VITE') || k.includes('URL') || k.includes('KEY')
-            );
-            
             return res.status(500).json({ 
-                error: `Datenbank-Verbindung fehlgeschlagen. Gefundene Variablen-Namen auf dem Server: [${gefundeneKeys.join(', ') || 'KEINE'}]. Bitte im Vercel Dashboard abgleichen!` 
+                error: 'Datenbank-Verbindung fehlgeschlagen. Umgebungsvariablen prüfen!' 
             });
         }
 

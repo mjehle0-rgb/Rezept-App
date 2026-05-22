@@ -16,6 +16,9 @@ export default async function handler(req, res) {
                     'Authorization': `Bearer ${supabaseKey}`
                 }
             });
+            if (!response.ok) {
+                throw new Error(`Supabase antwortete mit Status ${response.status}`);
+            }
             const data = await response.json();
             return res.status(200).json(data);
         } catch (error) {
@@ -26,13 +29,16 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
         const { id } = req.body;
         try {
-            await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${id}`, {
+            const response = await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${id}`, {
                 method: 'DELETE',
                 headers: {
                     'apikey': supabaseKey,
                     'Authorization': `Bearer ${supabaseKey}`
                 }
             });
+            if (!response.ok) {
+                throw new Error(`Supabase antwortete mit Status ${response.status}`);
+            }
             return res.status(200).json({ success: true });
         } catch (error) {
             return res.status(500).json({ error: error.message });

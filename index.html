@@ -181,19 +181,52 @@
                     const tags = Array.isArray(recipe.tags) ? recipe.tags : (recipe.tags ? recipe.tags.split(',') : []);
                     const card = document.createElement('div');
                     card.className = "bg-white p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between hover:shadow-xl transition-all duration-500 group";
-                    card.innerHTML = `
-                        <div>
-                            <h3 class="font-bold font-serif text-gray-900 text-xl leading-tight group-hover:text-amber-600 transition-colors">${recipe.title}</h3>
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                ${tags.map(t => `<span class="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">${t.trim()}</span>`).join('')}
-                            </div>
-                            <p class="text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3 whitespace-pre-line">${recipe.notes || ''}</p>
-                        </div>
-                        <div class="mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                            ${recipe.link ? `<a href="${recipe.link}" target="_blank" class="text-gray-400 hover:text-amber-600 transition-colors">Link ↗</a>` : '<span></span>'}
-                            <button onclick="deleteRecipe(${recipe.id})" class="text-gray-200 hover:text-red-500 transition-colors cursor-pointer">Löschen</button>
-                        </div>
-                    `;
+
+                    const contentDiv = document.createElement('div');
+
+                    const title = document.createElement('h3');
+                    title.className = "font-bold font-serif text-gray-900 text-xl leading-tight group-hover:text-amber-600 transition-colors";
+                    title.textContent = recipe.title;
+                    contentDiv.appendChild(title);
+
+                    const tagsDiv = document.createElement('div');
+                    tagsDiv.className = "flex flex-wrap gap-2 mt-3";
+                    tags.forEach(t => {
+                        const tag = document.createElement('span');
+                        tag.className = "text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md";
+                        tag.textContent = t.trim();
+                        tagsDiv.appendChild(tag);
+                    });
+                    contentDiv.appendChild(tagsDiv);
+
+                    const notes = document.createElement('p');
+                    notes.className = "text-gray-500 text-xs mt-5 leading-relaxed italic border-l-2 border-amber-100 pl-3 whitespace-pre-line";
+                    notes.textContent = recipe.notes || '';
+                    contentDiv.appendChild(notes);
+
+                    card.appendChild(contentDiv);
+
+                    const footer = document.createElement('div');
+                    footer.className = "mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest";
+
+                    if (recipe.link) {
+                        const link = document.createElement('a');
+                        link.href = recipe.link;
+                        link.target = "_blank";
+                        link.className = "text-gray-400 hover:text-amber-600 transition-colors";
+                        link.textContent = "Link ↗";
+                        footer.appendChild(link);
+                    } else {
+                        footer.appendChild(document.createElement('span'));
+                    }
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = "text-gray-200 hover:text-red-500 transition-colors cursor-pointer";
+                    deleteBtn.textContent = "Löschen";
+                    deleteBtn.onclick = () => deleteRecipe(recipe.id);
+                    footer.appendChild(deleteBtn);
+
+                    card.appendChild(footer);
                     recipeList.appendChild(card);
                 });
             } catch (e) { console.error(e); }
@@ -223,6 +256,7 @@
                     if (data.title) recipeTitle.value = data.title;
                     if (data.tags) recipeTags.value = data.tags;
                     if (data.notes) recipeNotes.value = data.notes;
+                    if (data.link) recipeLink.value = data.link;
 
                     if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
                         toggleForm();
@@ -262,6 +296,7 @@
                 if (data.title) recipeTitle.value = data.title;
                 if (data.tags) recipeTags.value = data.tags;
                 if (data.notes) recipeNotes.value = data.notes;
+                if (data.link) recipeLink.value = data.link;
             } catch (e) { 
                 recipeNotes.value = `• Import abgebrochen oder verlangsamt (${e.message}).\n• Bei blockierten Plattformen (YouTube Shorts, Instagram) nutze bitte die 📷 Kamera-Funktion für einen schnellen Screenshot!`;
                 if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
@@ -301,12 +336,16 @@
         // 5. Löschen
         window.deleteRecipe = async function(id) {
             if (!confirm("Rezept löschen?")) return;
-            await fetch('/api/get-recipes', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
-            loadRecipes();
+            try {
+                const response = await fetch('/api/get-recipes', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (response.ok) {
+                    loadRecipes();
+                }
+            } catch (e) { console.error(e); }
         }
 
         loadRecipes();

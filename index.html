@@ -112,9 +112,11 @@
 
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zutaten & Notizen</label>
-                            <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?" 
+                            <textarea id="recipeNotes" rows="6" placeholder="Was macht dieses Rezept besonders?"
                                       class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all leading-relaxed no-scrollbar"></textarea>
                         </div>
+
+                        <input type="hidden" id="recipeId" value="">
 
                         <button type="submit" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-sm tracking-widest">
                             STUDIO SPEICHERN
@@ -223,6 +225,12 @@
                         footer.appendChild(document.createElement('span'));
                     }
 
+                    const editBtn = document.createElement('button');
+                    editBtn.className = "text-gray-400 hover:text-amber-600 transition-colors cursor-pointer";
+                    editBtn.textContent = "✏️ Bearbeiten";
+                    editBtn.onclick = () => editRecipe(recipe.id, recipe);
+                    footer.appendChild(editBtn);
+
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = "text-gray-200 hover:text-red-500 transition-colors cursor-pointer";
                     deleteBtn.textContent = "Löschen";
@@ -314,12 +322,16 @@
         // 4. In die Cloud speichern
         recipeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const recipeId = document.getElementById('recipeId').value;
             const payload = {
                 title: recipeTitle.value.trim(),
                 link: recipeLink.value.trim(),
                 tags: recipeTags.value.trim(),
                 notes: recipeNotes.value.trim()
             };
+            if (recipeId) {
+                payload.id = recipeId;
+            }
             
             try {
                 const response = await fetch('/api/save-recipe', {
@@ -330,11 +342,26 @@
 
                 if (response.ok) {
                     recipeForm.reset();
+                    document.getElementById('recipeId').value = '';
+                    recipeForm.querySelector('button[type="submit"]').textContent = 'STUDIO SPEICHERN';
                     if (window.innerWidth < 1024) toggleForm();
                     loadRecipes();
                 }
             } catch (e) { console.error(e); }
         });
+
+        // 4b. Bearbeiten
+        window.editRecipe = function(id, recipe) {
+            recipeTitle.value = recipe.title;
+            recipeLink.value = recipe.link || '';
+            recipeTags.value = Array.isArray(recipe.tags) ? recipe.tags.join(', ') : (recipe.tags || '');
+            recipeNotes.value = recipe.notes || '';
+            document.getElementById('recipeId').value = id;
+            recipeForm.querySelector('button[type="submit"]').textContent = 'REZEPT AKTUALISIEREN';
+            if (window.innerWidth < 1024 && !formContainer.classList.contains('open')) {
+                toggleForm();
+            }
+        }
 
         // 5. Löschen
         window.deleteRecipe = async function(id) {

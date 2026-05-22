@@ -118,9 +118,14 @@
 
                         <input type="hidden" id="recipeId" value="">
 
-                        <button type="submit" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-sm tracking-widest">
-                            STUDIO SPEICHERN
-                        </button>
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-gray-900 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:bg-amber-600 active:scale-[0.98] cursor-pointer text-sm tracking-widest">
+                                STUDIO SPEICHERN
+                            </button>
+                            <button type="button" id="clearFormBtn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-all shadow-sm hover:bg-gray-300 active:scale-[0.98] cursor-pointer text-sm tracking-widest">
+                                LEEREN
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -146,12 +151,13 @@
         const recipeForm = document.getElementById('recipeForm');
         const recipeList = document.getElementById('recipeList');
         const recipeCount = document.getElementById('recipeCount');
-        
+
         const magicBtn = document.getElementById('magicBtn');
         const recipeLink = document.getElementById('recipeLink');
         const recipeTitle = document.getElementById('recipeTitle');
         const recipeTags = document.getElementById('recipeTags');
         const recipeNotes = document.getElementById('recipeNotes');
+        const clearFormBtn = document.getElementById('clearFormBtn');
         const imageUpload = document.getElementById('imageUpload');
 
         // Toggle Steuerung für Mobile Eingabemaske
@@ -165,6 +171,13 @@
 
         mobileAddBtn.addEventListener('click', toggleForm);
         closeFormBtn.addEventListener('click', toggleForm);
+
+        // Clear Form Handler
+        clearFormBtn.addEventListener('click', () => {
+            recipeForm.reset();
+            document.getElementById('recipeId').value = '';
+            recipeForm.querySelector('button[type="submit"]').textContent = 'STUDIO SPEICHERN';
+        });
 
         // 1. Rezepte abrufen
         async function loadRecipes() {

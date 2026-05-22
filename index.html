@@ -168,6 +168,9 @@
         async function loadRecipes() {
             try {
                 const response = await fetch('/api/get-recipes');
+                if (!response.ok) {
+                    throw new Error(`Fehler beim Abrufen (${response.status})`);
+                }
                 const recipes = await response.json();
                 recipeList.innerHTML = "";
                 recipeCount.textContent = `${recipes.length} Rezepte`;

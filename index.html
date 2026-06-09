@@ -228,12 +228,21 @@
                     footer.className = "mt-8 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest";
 
                     if (recipe.link) {
-                        const link = document.createElement('a');
-                        link.href = recipe.link;
-                        link.target = "_blank";
-                        link.className = "text-gray-400 hover:text-amber-600 transition-colors";
-                        link.textContent = "Link ↗";
-                        footer.appendChild(link);
+                        try {
+                            const parsedUrl = new URL(recipe.link, window.location.origin);
+                            if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+                                const link = document.createElement('a');
+                                link.href = parsedUrl.href;
+                                link.target = "_blank";
+                                link.className = "text-gray-400 hover:text-amber-600 transition-colors";
+                                link.textContent = "Link ↗";
+                                footer.appendChild(link);
+                            } else {
+                                footer.appendChild(document.createElement('span'));
+                            }
+                        } catch (e) {
+                            footer.appendChild(document.createElement('span'));
+                        }
                     } else {
                         footer.appendChild(document.createElement('span'));
                     }

@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
         const { id } = req.body;
         try {
-            const response = await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${id}`, {
+            const response = await fetch(`${supabaseUrl}/rest/v1/recipes?id=eq.${encodeURIComponent(id)}`, {
                 method: 'DELETE',
                 headers: {
                     'apikey': supabaseKey,
